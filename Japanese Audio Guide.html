@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Donovan's Japanese Audio Guide</title>
+
+<!-- PWA Meta Tags -->
+<meta name="application-name" content="JP Audio Guide">
+<meta name="description" content="Donovan's Japanese Audio Guide — tap to hear phrases spoken in Japanese">
+
+<!-- iOS PWA (Add to Home Screen) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JP Guide">
+
+<!-- iOS touch icon (shown on home screen) -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230F6E56'/%3E%3Ctext x='90' y='125' font-size='100' text-anchor='middle'%3E%F0%9F%8E%8C%3C/text%3E%3C/svg%3E">
+
+<!-- Theme color (colors the Safari chrome on iOS) -->
+<meta name="theme-color" content="#0F6E56">
+
+<!-- Web App Manifest (inline as data URI for single-file portability) -->
+<link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Donovan%27s%20Japanese%20Audio%20Guide%22%2C%22short_name%22%3A%22JP%20Guide%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230F6E56%22%2C%22theme_color%22%3A%22%230F6E56%22%7D">
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F0F4F2; color: #1a1a1a; }
+  .header { background: #0F6E56; color: white; padding: 20px; text-align: center; }
+  .header h1 { font-size: 22px; margin-bottom: 4px; }
+  .header p { font-size: 13px; opacity: 0.85; }
+  .voice-bar { background: #085041; padding: 10px 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .voice-bar label { color: #a0f0d8; font-size: 12px; }
+  .voice-bar select { font-size: 12px; padding: 4px 8px; border-radius: 6px; border: none; background: #0a5e48; color: white; }
+  .voice-status { font-size: 11px; color: #6ee7c0; margin-left: auto; }
+  .tabs { display: flex; overflow-x: auto; background: white; border-bottom: 2px solid #e0e0e0; }
+  .tab { padding: 12px 16px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; color: #666; flex-shrink: 0; }
+  .tab.active { border-bottom-color: #0F6E56; color: #0F6E56; }
+  .content { max-width: 680px; margin: 0 auto; padding: 16px 16px 80px; }
+  .unit { display: none; }
+  .unit.active { display: block; }
+  .unit-title { font-size: 18px; font-weight: 600; color: #0F6E56; margin-bottom: 4px; }
+  .unit-sub { font-size: 12px; color: #888; margin-bottom: 16px; }
+  .phrase-card {
+    background: white; border-radius: 14px; padding: 14px 52px 14px 16px;
+    margin-bottom: 10px; border: 1px solid #e8e8e8; position: relative;
+  }
+  .phrase-card.playing { border-color: #6B21A8; background: #faf7ff; }
+  .phrase-card.staff { border-left: 4px solid #0F6E56; }
+  .phrase-card.you { border-left: 4px solid #185FA5; }
+  .phrase-card.info { border-left: 4px solid #854F0B; background: #FAFAF8; }
+  .card-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .card-label.staff-lbl { color: #0F6E56; }
+  .card-label.you-lbl { color: #185FA5; }
+  .jp-text { font-size: 20px; font-weight: 500; color: #1a1a1a; line-height: 1.4; margin-bottom: 4px; }
+  .romaji { font-size: 12px; color: #6B21A8; margin-bottom: 4px; }
+  .english { font-size: 13px; color: #444; margin-bottom: 4px; }
+  .note { font-size: 11px; color: #888; font-style: italic; }
+  .play-btn {
+    position: absolute; top: 50%; right: 12px; transform: translateY(-50%);
+    background: #0F6E56; color: white; border: none; border-radius: 50%;
+    width: 36px; height: 36px; font-size: 15px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .play-btn:hover { background: #085041; }
+  .play-btn.playing { background: #6B21A8; }
+  .play-btn.you-btn { background: #185FA5; }
+  .play-btn.you-btn:hover { background: #104080; }
+  .play-all-bar {
+    background: white; border-radius: 14px; padding: 12px 16px; margin-bottom: 16px;
+    border: 1px solid #e8e8e8; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .play-all-btn { background: #0F6E56; color: white; border: none; border-radius: 10px; padding: 9px 16px; font-size: 13px; cursor: pointer; font-weight: 500; }
+  .play-all-btn:hover { background: #085041; }
+  .play-all-btn.stop { background: #cc3333; }
+  .speed-label { font-size: 12px; color: #888; }
+  .speed-btn { background: #f0f0f0; border: 1px solid #ddd; border-radius: 8px; padding: 5px 11px; font-size: 12px; cursor: pointer; color: #444; }
+  .speed-btn.active { background: #0F6E56; color: white; border-color: #0F6E56; }
+  .progress-text { font-size: 12px; color: #888; margin-left: auto; }
+  .section-divider { background: #f5f5f3; border-radius: 8px; padding: 8px 12px; margin: 14px 0 8px; font-size: 12px; font-weight: 600; color: #555; border-left: 3px solid #0F6E56; }
+  .section-divider.blue { border-left-color: #185FA5; }
+  .section-divider.amber { border-left-color: #854F0B; }
+  .section-divider.purple { border-left-color: #6B21A8; }
+  .tip-box { background: #FAEEDA; border-left: 3px solid #EF9F27; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #633806; margin-bottom: 12px; }
+  .now-playing { position: fixed; bottom: 0; left: 0; right: 0; background: #0F6E56; color: white; padding: 12px 20px; display: none; align-items: center; gap: 12px; z-index: 100; }
+  .now-playing.visible { display: flex; }
+  .now-playing-jp { font-size: 18px; font-weight: 500; }
+  .now-playing-en { font-size: 11px; opacity: 0.8; }
+  .stop-btn { margin-left: auto; background: rgba(255,255,255,0.2); border: none; border-radius: 8px; color: white; padding: 6px 12px; cursor: pointer; font-size: 13px; }
+  .ryokan-box { background: #E1F5EE; border-left: 4px solid #0F6E56; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-size: 13px; color: #04342C; line-height: 1.8; }
+
+  /* ── iOS Install Banner ── */
+  .install-banner {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    background: #0F6E56; color: white;
+    padding: 12px 16px 12px 16px;
+    padding-top: max(12px, env(safe-area-inset-top));
+    flex-direction: column; gap: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .install-banner.show { display: flex; }
+  .install-banner-row { display: flex; align-items: center; gap: 10px; }
+  .install-banner-icon { font-size: 28px; flex-shrink: 0; }
+  .install-banner-text { font-size: 13px; line-height: 1.4; flex: 1; }
+  .install-banner-text strong { font-size: 14px; display: block; margin-bottom: 2px; }
+  .install-steps { font-size: 12px; opacity: 0.9; display: flex; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
+  .install-step { background: rgba(255,255,255,0.15); border-radius: 6px; padding: 4px 8px; white-space: nowrap; }
+  .install-close {
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; flex-shrink: 0;
+  }
+
+  /* Safe area padding for notched iPhones */
+  .now-playing { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+  .content { padding-bottom: max(80px, calc(60px + env(safe-area-inset-bottom))); }
+  /* ── Kana grid ── */
+  .kana-section-title { font-size: 16px; font-weight: 600; color: #0F6E56; margin: 20px 0 4px; }
+  .kana-section-sub { font-size: 12px; color: #888; margin-bottom: 12px; }
+  .kana-tip { background: #FAEEDA; border-left: 3px solid #EF9F27; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #633806; margin-bottom: 14px; }
+  .kana-grid { display: grid; grid-template-columns: 36px repeat(5, 1fr); gap: 5px; margin-bottom: 6px; }
+  .kana-header { background: #e8e8e8; border-radius: 6px; padding: 6px 2px; text-align: center; font-size: 11px; font-weight: 600; color: #555; }
+  .kana-row-label { background: #e8e8e8; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #555; }
+  .kana-cell {
+    background: white; border: 1px solid #e0e0e0; border-radius: 10px;
+    padding: 8px 4px; text-align: center; cursor: pointer;
+    transition: all 0.15s; position: relative;
+  }
+  .kana-cell:hover { background: #E1F5EE; border-color: #0F6E56; transform: scale(1.05); }
+  .kana-cell.playing { background: #EEEDFE; border-color: #6B21A8; }
+  .kana-cell.empty { background: #f9f9f9; border: 1px dashed #ddd; cursor: default; }
+  .kana-cell.empty:hover { transform: none; background: #f9f9f9; border-color: #ddd; }
+  .kana-char { font-size: 22px; font-weight: 500; color: #1a1a1a; line-height: 1.2; display: block; }
+  .kana-rom { font-size: 10px; color: #6B21A8; margin-top: 2px; display: block; }
+  .kana-play-all { background: #0F6E56; color: white; border: none; border-radius: 10px; padding: 8px 16px; font-size: 12px; cursor: pointer; font-weight: 500; margin-bottom: 14px; margin-right: 8px; }
+  .kana-play-all:hover { background: #085041; }
+  .kana-play-all.kata { background: #185FA5; }
+  .kana-play-all.kata:hover { background: #104080; }
+  .kana-play-all.stop { background: #cc3333; }
+  .kana-divider { border: none; border-top: 1.5px solid #e0e0e0; margin: 24px 0 20px; }
+</style>
+</head>
+<body>
+
+<!-- iOS Add to Home Screen Banner -->
+<div class="install-banner" id="installBanner">
+  <div class="install-banner-row">
+    <div class="install-banner-icon">🎌</div>
+    <div class="install-banner-text">
+      <strong>Save to your iPhone!</strong>
+      Add this guide to your Home Screen for offline access
+    </div>
+    <button class="install-close" onclick="dismissBanner()">✕</button>
+  </div>
+  <div class="install-steps">
+    <span class="install-step">① Tap <strong>Share</strong> 🔗</span>
+    <span class="install-step">② Tap <strong>Add to Home Screen</strong></span>
+    <span class="install-step">③ Tap <strong>Add</strong> ✓</span>
+  </div>
+</div>
+
+<div class="header">
+  <h1>🎌 Donovan's Japanese Audio Guide</h1>
+  <p>Tap 🔊 to hear Japanese · English translation shown below · Japanese audio only</p>
+</div>
+
+<div class="voice-bar">
+  <label>Japanese voice:</label>
+  <select id="jpVoice"></select>
+  <select id="enVoice" style="display:none"></select>
+  <span class="voice-status" id="voiceStatus">Loading voices...</span>
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div class="content" id="content"></div>
+
+<div class="now-playing" id="nowPlaying">
+  <div>
+    <div class="now-playing-jp" id="npJp"></div>
+    <div class="now-playing-en" id="npEn"></div>
+  </div>
+  <button class="stop-btn" onclick="stopAll()">■ Stop</button>
+</div>
+
+<script>
+const units = [
+
+  // ═══════════════════════════════════════════════════
+  // RESTAURANT
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'restaurant', tab: '🍜 Restaurant', title: 'レストラン — Restaurant',
+    sub: 'All slides: entering → ordering → paying',
+    sections: [
+      { title: 'Slide 1 — Arriving & being seated', color: '', phrases: [
+        { jp:'いらっしゃいませ。', rom:'Irasshaimase.', en:'Welcome! / Hello! (formal greeting on entry)', role:'staff' },
+        { jp:'なんめいさまですか？', rom:'Nanmeisama desuka?', en:'How many people in your party?', role:'staff' },
+        { jp:'【ふたり】です。', rom:'Futari desu.', en:'Two people, please.', note:'ひとり(1)・さんにん(3)・よにん(4)', role:'you' },
+      ]},
+      { title: 'Slide 2 — Wait time', color: '', phrases: [
+        { jp:'どのくらいまちますか？', rom:'Donokurai machimasuka?', en:'How long is the wait?', role:'you' },
+        { jp:'15ふんくらいです。', rom:'Jūgo-fun kurai desu.', en:"It's about 15 minutes.", role:'staff' },
+        { jp:'だいじょうぶです！', rom:'Daijōbu desu!', en:"That's fine! / No problem!", role:'you' },
+      ]},
+      { title: 'Slide 3 — Ordering', color: '', phrases: [
+        { jp:'すみません。', rom:'Sumimasen.', en:'Excuse me. (to get staff attention)', role:'you' },
+        { jp:'ちゅうもん おねがいします。', rom:'Chūmon onegaishimasu.', en:"May I order? / I'd like to order, please.", role:'you' },
+        { jp:'はーい！', rom:'Hāi!', en:'Sure! / Coming! (casual staff reply)', role:'staff' },
+        { jp:'「ラーメン」を ふたつと、「みず」を ふたつ おねがいします。', rom:'Rāmen wo futatsu to, mizu wo futatsu onegaishimasu.', en:'Two ramen and two waters, please.', role:'you' },
+        { jp:'いじょうで よろしいですか？', rom:'Ijōde yoroshii desuka?', en:'Is that everything? / Will that be all?', role:'staff' },
+        { jp:'はい、いじょうです。', rom:'Hai, ijō desu.', en:"Yes, that's all.", role:'you' },
+      ]},
+      { title: 'Slide 4 — Paying at the register (レジ)', color: '', phrases: [
+        { jp:'レジ', rom:'reji', en:'Register / Cashier / Checkout counter', note:'Look for this sign when paying' },
+        { jp:'すみません。おかいけい おねがいします。', rom:'Sumimasen. Okaikei onegaishimasu.', en:'Excuse me. Check / bill, please.', role:'you' },
+        { jp:'かしこまりました。', rom:'Kashikomarimashita.', en:'Certainly! / Understood. (formal)', role:'staff' },
+        { jp:'２５００えんです。', rom:'Nisen gohyaku-en desu.', en:"It's 2,500 yen.", role:'staff' },
+        { jp:'おねがいします。', rom:'Onegaishimasu.', en:'Here you go. (handing over payment)', role:'you' },
+        { jp:'カードで いいですか？', rom:'Kādo de ii desuka?', en:'Is it okay to pay by card?', role:'you' },
+        { jp:'レシートいりますか？', rom:'Reshīto irimasuka?', en:'Do you need a receipt?', role:'staff' },
+        { jp:'レシートだいじょうぶですか？', rom:'Reshīto daijōbu desuka?', en:'Is a receipt okay for you?', role:'staff' },
+        { jp:'はい、おねがいします。', rom:'Hai, onegaishimasu.', en:'Yes please.', role:'you' },
+        { jp:'いいえ、だいじょうぶです。', rom:'Iie, daijōbu desu.', en:"No, that's fine.", role:'you' },
+        { jp:'ごちそうさまでした！', rom:'Gochisōsamadeshita!', en:'Thank you for the meal! (said when leaving)', role:'you' },
+      ]},
+      { title: 'Slide 5 — Quick reference (基本フレーズ)', color: 'blue', phrases: [
+        { jp:'【ふたり】です。', rom:'Futari desu.', en:'① Two people, please.', role:'you' },
+        { jp:'どのくらいまちますか？', rom:'Donokurai machimasuka?', en:'② How long is the wait?', role:'you' },
+        { jp:'ちゅうもん おねがいします。', rom:'Chūmon onegaishimasu.', en:'③ May I order?', role:'you' },
+        { jp:'【ラーメン】を【ひとつ】ください。', rom:'Rāmen wo hitotsu kudasai.', en:'④ Can I have one ramen?', role:'you' },
+        { jp:'おかいけい おねがいします。', rom:'Okaikei onegaishimasu.', en:'⑤ Check, please.', role:'you' },
+        { jp:'カードでいいですか？', rom:'Kādo de ii desuka?', en:'⑥ Can I pay with credit card?', role:'you' },
+      ]},
+      { title: 'Slide 6 — Advanced phrases', color: 'purple', phrases: [
+        { jp:'【たまご】のアレルギーがあります。', rom:'Tamago no arerugī ga arimasu.', en:'① I have an egg allergy.', note:'Swap たまご for any allergen', role:'you' },
+        { jp:'ベジタリアンメニューはありますか？', rom:'Bejitarian menyū wa arimasuka?', en:'② Do you have a vegetarian menu?', role:'you' },
+        { jp:'おすすめは なんですか？', rom:'Osusume wa nandesuka?', en:'③ What do you recommend?', role:'you' },
+        { jp:'これは なんですか？', rom:'Kore wa nandesuka?', en:'④ What is this?', role:'you' },
+        { jp:'ごちそうさまでした。', rom:'Gochisōsamadeshita.', en:'⑤ Thank you for the meal.', role:'you' },
+        { jp:'だいじょうぶです。', rom:'Daijōbu desu.', en:"It's okay. / No thanks. / No problem." },
+        { jp:'すみません。', rom:'Sumimasen.', en:'Excuse me. / Sorry. (very versatile!)' },
+        { jp:'おねがいします。', rom:'Onegaishimasu.', en:"Please. / I'd like this." },
+      ]},
+      { title: '💬 Situational dialogue — Full restaurant experience', color: '', phrases: [
+        { jp:'いらっしゃいませ！なんめいさまですか？', rom:'Irasshaimase! Nanmeisama desuka?', en:'Welcome! How many people?', role:'staff' },
+        { jp:'ふたりです。', rom:'Futari desu.', en:'Two people please.', role:'you' },
+        { jp:'しょうしょう おまちください。', rom:'Shōshō omachi kudasai.', en:'Please wait a moment.', role:'staff' },
+        { jp:'すみません。ちゅうもん おねがいします。', rom:'Sumimasen. Chūmon onegaishimasu.', en:'Excuse me, I\'d like to order.', role:'you' },
+        { jp:'はい！おきまりですか？', rom:'Hai! Okimari desuka?', en:'Yes! Are you ready?', role:'staff' },
+        { jp:'ラーメンを ひとつと、ぎょうざを ふたつ おねがいします。', rom:'Rāmen wo hitotsu to, gyōza wo futatsu onegaishimasu.', en:'One ramen and two gyoza please.', role:'you' },
+        { jp:'たまごのアレルギーがあります。', rom:'Tamago no arerugī ga arimasu.', en:'I have an egg allergy.', role:'you' },
+        { jp:'かしこまりました。たまごなしで おつくりします。', rom:'Kashikomarimashita. Tamago nashi de otsukuri shimasu.', en:'Certainly. We\'ll make it without egg.', role:'staff' },
+        { jp:'おかいけい おねがいします。', rom:'Okaikei onegaishimasu.', en:'Check please.', role:'you' },
+        { jp:'１８００えんです。カードは つかえますか？', rom:'Sennihyaku-en desu. Kādo wa tsukaemasu ka?', en:'That\'s 1,800 yen. Can I use a card?', role:'you' },
+        { jp:'はい、つかえますよ。', rom:'Hai, tsukaemasu yo.', en:'Yes, you can!', role:'staff' },
+        { jp:'ごちそうさまでした！', rom:'Gochisōsamadeshita!', en:'Thank you for the meal!', role:'you' },
+      ]},
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════
+  // CONVENIENCE STORE
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'conbini', tab: '🏪 Convenience', title: 'コンビニ — Convenience Store',
+    sub: 'All slides: warming → age check → bag → receipt',
+    sections: [
+      { title: 'Slide 1 — Warming up food', color: '', phrases: [
+        { jp:'あたためますか？', rom:'Atatamemasuka?', en:'Would you like it warmed up?', role:'staff' },
+        { jp:'○ はい、おねがいします。', rom:'Hai, onegaishimasu.', en:'○ Yes please.', role:'you' },
+        { jp:'✕ いいえ、だいじょうぶです。', rom:'Iie, daijōbu desu.', en:'✕ No thank you.', role:'you' },
+      ]},
+      { title: 'Slide 2 — Age verification (alcohol / tobacco)', color: '', phrases: [
+        { jp:'２０歳以上ですか？', rom:'Nijussai ijō desuka?', en:'Are you 20 years of age or older?', role:'staff' },
+        { jp:'「はい。」（画面のボタンを押す）', rom:'"Hai." (gamen no botan wo osu)', en:'"Yes." — tap はい on the screen', note:'A touchscreen prompt appears — just tap the button', role:'you' },
+      ]},
+      { title: 'Slide 3 — Bag', color: '', phrases: [
+        { jp:'ふくろ いりますか？', rom:'Fukuro irimasuka?', en:'Do you need a bag?', role:'staff' },
+        { jp:'○ はい、おねがいします。', rom:'Hai, onegaishimasu.', en:'○ Yes please.', role:'you' },
+        { jp:'✕ いいえ、だいじょうぶです。', rom:'Iie, daijōbu desu.', en:'✕ No thanks.', role:'you' },
+      ]},
+      { title: 'Slide 4 — Receipt', color: '', phrases: [
+        { jp:'レシートいりますか？', rom:'Reshīto irimasuka?', en:'Do you need a receipt?', role:'staff' },
+        { jp:'レシートだいじょうぶですか？', rom:'Reshīto daijōbu desuka?', en:'Is a receipt okay for you?', role:'staff' },
+        { jp:'○ はい、おねがいします。', rom:'Hai, onegaishimasu.', en:'○ Yes please.', role:'you' },
+        { jp:'✕ いいえ、だいじょうぶです。', rom:'Iie, daijōbu desu.', en:'✕ No thanks.', role:'you' },
+      ]},
+      { title: 'The two answers — ○ yes / ✕ no', color: 'blue', phrases: [
+        { jp:'○ はい、おねがいします。', rom:'Hai, onegaishimasu.', en:'○ Yes please.', role:'you' },
+        { jp:'✕ いいえ、だいじょうぶです。', rom:'Iie, daijōbu desu.', en:'✕ No thank you. / I\'m fine.', role:'you' },
+      ]},
+      { title: '💬 Situational dialogue — Full convenience store visit', color: '', phrases: [
+        { jp:'いらっしゃいませ！', rom:'Irasshaimase!', en:'Welcome!', role:'staff' },
+        { jp:'あたためますか？', rom:'Atatamemasuka?', en:'Would you like it warmed up?', role:'staff' },
+        { jp:'はい、おねがいします。', rom:'Hai, onegaishimasu.', en:'Yes please.', role:'you' },
+        { jp:'２０歳以上ですか？', rom:'Nijussai ijō desuka?', en:'Are you 20 or older?', role:'staff' },
+        { jp:'（がめんのボタンをおす）はい。', rom:'(Gamen no botan wo osu) Hai.', en:'(Tap the screen button) Yes.', role:'you' },
+        { jp:'ふくろ いりますか？', rom:'Fukuro irimasuka?', en:'Do you need a bag?', role:'staff' },
+        { jp:'いいえ、だいじょうぶです。', rom:'Iie, daijōbu desu.', en:'No thanks.', role:'you' },
+        { jp:'８５０えんです。', rom:'Happyaku gojū-en desu.', en:'That\'s 850 yen.', role:'staff' },
+        { jp:'（ICカードをタップ）おねがいします。', rom:'(IC kādo wo tappu) Onegaishimasu.', en:'(Tap IC card) Here you go.', role:'you' },
+        { jp:'レシートいりますか？', rom:'Reshīto irimasuka?', en:'Do you need a receipt?', role:'staff' },
+        { jp:'いいえ、だいじょうぶです。ありがとうございます！', rom:'Iie, daijōbu desu. Arigatou gozaimasu!', en:'No thanks. Thank you!', role:'you' },
+      ]},
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════
+  // CAFE
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'cafe', tab: '☕ Cafe', title: 'カフェ — Cafe',
+    sub: 'All slides: vocabulary → ordering → for here or to go → milk options',
+    sections: [
+      { title: 'Slide 1 — Cafe vocabulary', color: 'blue', phrases: [
+        { jp:'ホット', rom:'hotto / atatakai', en:'Hot / Warm' },
+        { jp:'アイス', rom:'aisu / tsumetai', en:'Iced / Cold' },
+        { jp:'さとう', rom:'satō', en:'Sugar' },
+        { jp:'ぎゅうにゅう / ミルク', rom:'gyūnyū / miruku', en:'Regular milk' },
+        { jp:'S エス', rom:'esu', en:'Small (size)' },
+        { jp:'M エム', rom:'emu', en:'Medium (size)' },
+        { jp:'L エル', rom:'eru', en:'Large (size)' },
+        { jp:'小 しょう', rom:'shō', en:'Small (Japanese size label)' },
+        { jp:'中 ちゅう', rom:'chū', en:'Medium (Japanese size label)' },
+        { jp:'大 だい', rom:'dai', en:'Large (Japanese size label)' },
+        { jp:'もちかえり', rom:'mochikaeri', en:'Takeout / To go' },
+        { jp:'てんない / ここ', rom:'tennai / koko', en:'For here / Dine in' },
+        { jp:'くろわっさん', rom:'kurowassan', en:'Croissant' },
+      ]},
+      { title: 'Slide 2 — Ordering', color: '', phrases: [
+        { jp:'注文 お決まりですか？', rom:'Chūmon okimari desuka?', en:'Are you ready to order?', role:'staff' },
+        { jp:'ホットコーヒーの M ひとつ ください。', rom:'Hotto kōhī no M hitotsu kudasai.', en:'One medium hot coffee, please.', role:'you' },
+      ]},
+      { title: 'Slide 3 — For here or to go', color: '', phrases: [
+        { jp:'店内ご利用ですか？', rom:'Tennai goriyō desuka?', en:'For here or to go? / Will you be dining in?', role:'staff' },
+        { jp:'【もちかえり】です。', rom:'Mochikaeri desu.', en:'To go. / Takeout.', role:'you' },
+        { jp:'【てんない / ここ】です。', rom:'Tennai / koko desu.', en:'For here. / I\'ll eat in.', role:'you' },
+      ]},
+      { title: 'Slide 4 — Asking about milk options', color: '', phrases: [
+        { jp:'すみません。【アーモンドミルク】ありますか？', rom:'Sumimasen. Āmondo miruku arimasuka?', en:'Excuse me. Do you have almond milk?', role:'you' },
+        { jp:'○ はい、ありますよ！', rom:'Hai, arimasuyō!', en:'○ Yes, we have it!', role:'staff' },
+        { jp:'✕ すみません。ぎゅうにゅう だけです。', rom:'Sumimasen. Gyūnyū dake desu.', en:'✕ Sorry, we only have regular milk.', role:'staff' },
+        { jp:'○ じゃあ、おねがいします！', rom:'Jā, onegaishimasu!', en:'○ Okay then, yes please!', role:'you' },
+        { jp:'✕ わかりました。だいじょうぶです。', rom:'Wakarimashita. Daijōbu desu.', en:"✕ I see, that's okay. (declining)", role:'you' },
+      ]},
+      { title: 'Slide 5 — Milk types vocabulary', color: 'blue', phrases: [
+        { jp:'オーツミルク', rom:'ōtsu miruku', en:'Oat milk' },
+        { jp:'アーモンドミルク', rom:'āmondo miruku', en:'Almond milk' },
+        { jp:'とうにゅう', rom:'tōnyū', en:'Soy milk' },
+        { jp:'ぎゅうにゅう', rom:'gyūnyū', en:'Regular (cow) milk' },
+      ]},
+      { title: '💬 Situational dialogue — Full cafe order', color: '', phrases: [
+        { jp:'いらっしゃいませ！ご注文はおきまりですか？', rom:'Irasshaimase! Go-chūmon wa okimari desuka?', en:'Welcome! Are you ready to order?', role:'staff' },
+        { jp:'アイスラテの L を ひとつ おねがいします。', rom:'Aisu rate no L wo hitotsu onegaishimasu.', en:'One large iced latte please.', role:'you' },
+        { jp:'すみません。オーツミルク ありますか？', rom:'Sumimasen. Ōtsu miruku arimasuka?', en:'Excuse me, do you have oat milk?', role:'you' },
+        { jp:'はい、ございます！+５０えんに なります。', rom:'Hai, gozaimasu! +Gojū-en ni narimasu.', en:'Yes we do! It will be an extra 50 yen.', role:'staff' },
+        { jp:'じゃあ、おねがいします！', rom:'Jā, onegaishimasu!', en:'Okay, yes please!', role:'you' },
+        { jp:'てんないでよろしいですか？', rom:'Tennai de yoroshii desuka?', en:'Will you be having it here?', role:'staff' },
+        { jp:'もちかえりです。', rom:'Mochikaeri desu.', en:'To go please.', role:'you' },
+        { jp:'かしこまりました。お名前は？', rom:'Kashikomarimashita. O-namae wa?', en:'Certainly. Your name?', role:'staff' },
+        { jp:'ドノバン です。', rom:'Donoban desu.', en:'Donovan.', role:'you' },
+        { jp:'ドノバンさん、おまたせしました！', rom:'Donoban-san, omatase shimashita!', en:'Donovan, sorry for the wait — here you go!', role:'staff' },
+      ]},
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════
+  // HOTEL
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'hotel', tab: '🏨 Hotel', title: 'ホテル・りょかん — Hotel & Ryokan',
+    sub: 'All slides: ryokan intro → vocabulary → 5 phrases → time → hours',
+    sections: [
+      { title: 'Slide 1 — What is a りょかん?', color: 'amber', phrases: [
+        { jp:'りょかん', rom:'ryokan', en:'Traditional Japanese hotel / inn' },
+        { jp:'たたみ', rom:'tatami', en:'Tatami mat floors (traditional woven straw)', note:'Rooms have tatami floors and futon beds' },
+        { jp:'ふとん', rom:'futon', en:'Futon bed (laid on the floor)' },
+        { jp:'ゆかた', rom:'yukata', en:'Light kimono worn by guests at the inn' },
+        { jp:'おんせん', rom:'onsen', en:'Hot spring bath', note:'Many ryokan have one on site' },
+        { jp:'おもてなし', rom:'omotenashi', en:'Warm, attentive hospitality — what ryokan are famous for' },
+      ]},
+      { title: 'Slide 2 — Vocabulary (4 key words)', color: 'blue', phrases: [
+        { jp:'① チェックイン ⇔ チェックアウト', rom:'chekku in ⇔ chekku auto', en:'① Check-in ⇔ Check-out' },
+        { jp:'② にもつ', rom:'nimotsu', en:'② Baggage / luggage' },
+        { jp:'③ ちょうしょく', rom:'chōshoku', en:'③ Breakfast (formal)' },
+        { jp:'④ フロント（ふろんと）', rom:'furonto', en:'④ Front desk' },
+      ]},
+      { title: 'Slide 3 — 5 Essential phrases', color: '', phrases: [
+        { jp:'① チェックイン おねがいします。', rom:'Chekku in onegaishimasu.', en:"① I'd like to check in.", role:'you' },
+        { jp:'② にもつ を あずけたい です。', rom:'Nimotsu wo azuketai desu.', en:"② I'd like to leave my luggage.", role:'you' },
+        { jp:'③ ちょうしょくはどこですか？', rom:'Chōshoku wa doko desuka?', en:'③ Where is the breakfast area?', role:'you' },
+        { jp:'④ ちょうしょくはなんじからですか？', rom:'Chōshoku wa nanji kara desuka?', en:'④ What time does breakfast start?', role:'you' },
+        { jp:'⑤ ちょうしょくはなんじまでですか？', rom:'Chōshoku wa nanji made desuka?', en:'⑤ Until what time is breakfast served?', role:'you' },
+      ]},
+      { title: 'Slide 4 — じかん (Time): hours 1–12', color: 'blue', phrases: [
+        { jp:'いちじ', rom:'ichiji', en:'1:00' },
+        { jp:'にじ', rom:'niji', en:'2:00' },
+        { jp:'さんじ', rom:'sanji', en:'3:00' },
+        { jp:'よじ ★', rom:'yoji', en:'4:00', note:'★ Irregular — not しじ!' },
+        { jp:'ごじ', rom:'goji', en:'5:00' },
+        { jp:'ろくじ', rom:'rokuji', en:'6:00' },
+        { jp:'しちじ ★', rom:'shichiji', en:'7:00', note:'★ Irregular — not ななじ!' },
+        { jp:'はちじ', rom:'hachiji', en:'8:00' },
+        { jp:'くじ ★', rom:'kuji', en:'9:00', note:'★ Irregular — not きゅうじ!' },
+        { jp:'じゅうじ', rom:'jūji', en:'10:00' },
+        { jp:'じゅういちじ', rom:'jūichiji', en:'11:00' },
+        { jp:'じゅうにじ', rom:'jūniji', en:'12:00' },
+      ]},
+      { title: 'Slide 5 — Time of day & meals', color: 'amber', phrases: [
+        { jp:'あさ', rom:'asa', en:'Morning' },
+        { jp:'ひる', rom:'hiru', en:'Afternoon / Daytime' },
+        { jp:'よる', rom:'yoru', en:'Night / Evening' },
+        { jp:'ごぜん', rom:'gozen', en:'AM' },
+        { jp:'ごご', rom:'gogo', en:'PM' },
+        { jp:'あさごはん', rom:'asa gohan', en:'Breakfast (casual)' },
+        { jp:'ひるごはん', rom:'hiru gohan', en:'Lunch' },
+        { jp:'よるごはん', rom:'yoru gohan', en:'Dinner (casual)' },
+      ]},
+      { title: 'Slide 6 — Asking opening times (から = "from")', color: '', phrases: [
+        { jp:'すみません。【レストラン】は なんじ から ですか？', rom:'Sumimasen. Resutoran wa nanji kara desuka?', en:'Excuse me. What time does the restaurant open?', note:'Replace レストラン with any place', role:'you' },
+        { jp:'【１０じ】からです。', rom:'Jūji kara desu.', en:'It opens at 10:00.', role:'staff' },
+        { jp:'ちょうしょく ６じから', rom:'Chōshoku, rokuji kara', en:'Breakfast from 6:00', role:'staff' },
+        { jp:'よるごはん ７じから', rom:'Yorugohan, shichiji kara', en:'Dinner from 7:00', role:'staff' },
+        { jp:'レストラン １１じから', rom:'Resutoran, jūichiji kara', en:'Restaurant from 11:00', role:'staff' },
+        { jp:'カフェ １４じから', rom:'Kafe, jūyoji kara', en:'Cafe from 14:00', role:'staff' },
+      ]},
+      { title: 'Slide 7 — Asking closing times (まで = "until")', color: '', phrases: [
+        { jp:'すみません。【レストラン】は なんじ まで ですか？', rom:'Sumimasen. Resutoran wa nanji made desuka?', en:'Excuse me. Until what time is the restaurant open?', note:'Replace レストラン with any place', role:'you' },
+        { jp:'【１０じ】までです。', rom:'Jūji made desu.', en:'Until 10:00.', role:'staff' },
+        { jp:'ちょうしょく ～１０じまで', rom:'Chōshoku, jūji made', en:'Breakfast until 10:00', role:'staff' },
+        { jp:'ゆうしょく ～２２じまで', rom:'Yūshoku, nijūniji made', en:'Dinner until 22:00', role:'staff' },
+        { jp:'レストラン ～１４じまで', rom:'Resutoran, jūyoji made', en:'Restaurant until 14:00', role:'staff' },
+        { jp:'カフェ ～１７じまで', rom:'Kafe, jūshichiji made', en:'Cafe until 17:00', role:'staff' },
+      ]},
+      { title: '💬 Situational dialogue — Checking in', color: '', phrases: [
+        { jp:'いらっしゃいませ。', rom:'Irasshaimase.', en:'Welcome!', role:'staff' },
+        { jp:'チェックイン おねがいします。スミス ドノバン です。', rom:'Chekku in onegaishimasu. Sumisu Donoban desu.', en:'I\'d like to check in. I\'m Donovan Smith.', role:'you' },
+        { jp:'かしこまりました。パスポートを みせていただけますか？', rom:'Kashikomarimashita. Pasupōto wo misete itadakemasu ka?', en:'Certainly. May I see your passport?', role:'staff' },
+        { jp:'はい、どうぞ。', rom:'Hai, dōzo.', en:'Yes, here you go.', role:'you' },
+        { jp:'ありがとうございます。３０５ごうしつです。', rom:'Arigatou gozaimasu. Sanbyaku go-gōshitsu desu.', en:'Thank you. You\'re in room 305.', role:'staff' },
+        { jp:'ちょうしょくはどこですか？なんじからですか？', rom:'Chōshoku wa doko desuka? Nanji kara desuka?', en:'Where is breakfast? And what time does it start?', role:'you' },
+        { jp:'２かいの レストランです。６じからです。', rom:'Nikai no resutoran desu. Rokuji kara desu.', en:'It\'s in the restaurant on the 2nd floor. From 6:00.', role:'staff' },
+        { jp:'なんじまでですか？', rom:'Nanji made desuka?', en:'Until what time?', role:'you' },
+        { jp:'じゅうじまでです。', rom:'Jūji made desu.', en:'Until 10:00.', role:'staff' },
+        { jp:'ありがとうございます！', rom:'Arigatou gozaimasu!', en:'Thank you very much!', role:'you' },
+      ]},
+      { title: '💬 Situational dialogue — Leaving luggage', color: '', phrases: [
+        { jp:'すみません。にもつ を あずけたい です。', rom:'Sumimasen. Nimotsu wo azuketai desu.', en:'Excuse me, I\'d like to leave my luggage.', role:'you' },
+        { jp:'かしこまりました。おいくつですか？', rom:'Kashikomarimashita. Oikutsu desuka?', en:'Certainly. How many bags?', role:'staff' },
+        { jp:'みっつ おねがいします。', rom:'Mittsu onegaishimasu.', en:'Three bags please.', role:'you' },
+        { jp:'こちらが ひきかえけんです。', rom:'Kochira ga hikaekaeken desu.', en:'Here is your claim ticket.', role:'staff' },
+        { jp:'ありがとうございます。なんじまで あずかれますか？', rom:'Arigatou gozaimasu. Nanji made azukaremasu ka?', en:'Thank you. Until what time can you hold them?', role:'you' },
+        { jp:'よるの じゅうじまで だいじょうぶです。', rom:'Yoru no jūji made daijōbu desu.', en:'Until 10pm is fine.', role:'staff' },
+      ]},
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════
+  // TRANSPORTATION
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'transport', tab: '🚆 Transportation', title: 'のりもの — Transportation',
+    sub: 'All slides: vocabulary → phrases → want-to grammar → bus guide → IC card → rail passes',
+    sections: [
+      { title: 'Slide 2 — Vocabulary: Vehicles (のりもの)', color: 'blue', phrases: [
+        { jp:'でんしゃ', rom:'densha', en:'Train (local / commuter)' },
+        { jp:'ちかてつ', rom:'chikatetsu', en:'Subway / Underground' },
+        { jp:'しんかんせん', rom:'shinkansen', en:'Bullet train / Shinkansen' },
+        { jp:'バス', rom:'basu', en:'Bus' },
+        { jp:'ひこうき', rom:'hikōki', en:'Airplane' },
+        { jp:'タクシー', rom:'takushī', en:'Taxi' },
+      ]},
+      { title: 'Slide 2 — Vocabulary: Places (ばしょ)', color: 'blue', phrases: [
+        { jp:'えき', rom:'eki', en:'Train station' },
+        { jp:'バスてい', rom:'basu tei', en:'Bus stop' },
+        { jp:'くうこう', rom:'kūkō', en:'Airport' },
+      ]},
+      { title: 'Slide 2 — Vocabulary: Others (そのほか)', color: 'blue', phrases: [
+        { jp:'きっぷ', rom:'kippu', en:'Ticket' },
+        { jp:'かいさつ', rom:'kaisatsu', en:'Ticket gate / Turnstile' },
+        { jp:'ICカード', rom:'IC kādo', en:'IC card (e.g. Suica, Pasmo) — tap-to-pay transit card' },
+        { jp:'コインロッカー', rom:'koin rokkā', en:'Coin locker (for storing luggage at stations)' },
+        { jp:'出口　でぐち', rom:'deguchi', en:'Exit' },
+        { jp:'入口　いりぐち', rom:'iriguchi', en:'Entrance' },
+      ]},
+      { title: 'Slide 4 — 4 Essential phrases', color: '', phrases: [
+        { jp:'① ○○えき は どこですか？', rom:'○○-eki wa doko desuka?', en:'① Where is ○○ station?', note:'Replace ○○ with the station name', role:'you' },
+        { jp:'② この【バス】は ○○に いきますか？', rom:'Kono basu wa ○○ ni ikimasuka?', en:'② Does this [bus] go to ○○?', note:'Replace バス with でんしゃ or しんかんせん', role:'you' },
+        { jp:'③ つぎの【バス】は なんじ ですか？', rom:'Tsugi no basu wa nanji desuka?', en:'③ What time is the next [bus]?', note:'Replace バス with でんしゃ etc.', role:'you' },
+        { jp:'④ きっぷ を かいたい です。', rom:'Kippu wo kaitai desu.', en:'④ I\'d like to buy a ticket.', role:'you' },
+      ]},
+      { title: 'Slide 5 — "Want to~" grammar (〜たい)', color: 'purple', phrases: [
+        { jp:'かいます → かいたい', rom:'kaimasu → kaitai', en:'buy → want to buy', note:'Drop ます, add たい' },
+        { jp:'たべます → たべたい', rom:'tabemasu → tabetai', en:'eat → want to eat' },
+        { jp:'のみます → のみたい', rom:'nomimasu → nomitai', en:'drink → want to drink' },
+        { jp:'いきます → いきたい', rom:'ikimasu → ikitai', en:'go → want to go' },
+      ]},
+      { title: 'Slide 5 — Want-to sentences: 〈もの〉を〈verb〉', color: 'purple', phrases: [
+        { jp:'まんが を かいたいです。', rom:'Manga wo kaitai desu.', en:'I want to buy manga.', role:'you' },
+        { jp:'ドンキで スキンケア を かいたいです。', rom:'Donki de sukinkeā wo kaitai desu.', en:'I want to buy skincare at Don Quijote.', role:'you' },
+        { jp:'とんかつ を たべたいです。', rom:'Tonkatsu wo tabetai desu.', en:'I want to eat tonkatsu.', role:'you' },
+        { jp:'ハイボール を のみたいです。', rom:'Haibōru wo nomitai desu.', en:'I want to drink a highball.', role:'you' },
+        { jp:'あつかん を のみたいです。', rom:'Atsukan wo nomitai desu.', en:'I want to drink hot sake.', note:'あつかんがだいすきです = I love hot sake!', role:'you' },
+        { jp:'○○に いきたいです。', rom:'○○ ni ikitai desu.', en:'I want to go to ○○.', note:'Replace ○○ with any destination', role:'you' },
+      ]},
+      { title: 'Slide 6 — Transportation tips (manners)', color: 'amber', phrases: [
+        { jp:'しずかにしてください。', rom:'Shizuka ni shite kudasai.', en:'Please keep your voice down.', note:'On all public transport in Japan' },
+        { jp:'でんわはご えんりょください。', rom:'Denwa wa go-enryo kudasai.', en:'Please refrain from phone calls.', note:'Seen on signs in trains' },
+        { jp:'イヤホンをつかってください。', rom:'Iyahon wo tsukatte kudasai.', en:'Please use earphones.' },
+        { jp:'ならんで まってください。', rom:'Narande matte kudasai.', en:'Please line up and wait.', note:'Let passengers off before boarding' },
+      ]},
+      { title: 'Slide 7 — Can you eat on trains?', color: 'amber', phrases: [
+        { jp:'でんしゃ（ローカル）', rom:'densha (rōkaru)', en:'Local train — eating is generally avoided' },
+        { jp:'しんかんせん', rom:'shinkansen', en:'Bullet train — eating is totally OK!' },
+        { jp:'えきべん', rom:'ekiben', en:'Station bento box — a beloved shinkansen tradition', note:'Buy at the station before boarding!' },
+        { jp:'においのつよいものは やめてください。', rom:'Nioi no tsuyoi mono wa yamete kudasai.', en:'Please avoid strong-smelling food.', note:'Manners tip for the shinkansen' },
+      ]},
+      { title: 'Slide 8 — How to take a bus (signs to know)', color: '', phrases: [
+        { jp:'入口　いりぐち', rom:'iriguchi', en:'Entrance — board from the BACK door' },
+        { jp:'出口　でぐち', rom:'deguchi', en:'Exit — get off from the FRONT door' },
+        { jp:'① うしろのドアからのってください。', rom:'Ushiro no doa kara notte kudasai.', en:'① Board from the back door.' },
+        { jp:'② きっぷをとるか、ICカードをタップしてください。', rom:'Kippu wo toru ka, IC kādo wo tappu shite kudasai.', en:'② Take a ticket or tap your IC card.' },
+        { jp:'③ まえのスクリーンで うんちんをかくにんしてください。', rom:'Mae no sukurīn de unchin wo kakunin shite kudasai.', en:'③ Check the fare on the screen at the front.' },
+        { jp:'④ ていりゅうじょのまえに ていしゃボタンをおしてください。', rom:'Teiryūjo no mae ni teisha botan wo oshite kudasai.', en:'④ Press the stop button before your stop.' },
+        { jp:'⑤ まえのドアからおりて、はらってください。', rom:'Mae no doa kara orite, haratte kudasai.', en:'⑤ Pay when you get off at the front door.' },
+      ]},
+      { title: 'Slide 9 — IC Card (Welcome Suica)', color: 'blue', phrases: [
+        { jp:'ICカード', rom:'IC kādo', en:'IC card — rechargeable tap-to-pay transit card' },
+        { jp:'ウェルカムスイカ', rom:'Werukamu Suika', en:'Welcome Suica — IC card for tourists (no deposit, valid 28 days)' },
+        { jp:'チャージ', rom:'chāji', en:'Top up / Recharge the card' },
+        { jp:'でんしゃ、バス、コンビニでつかえます。', rom:'Densha, basu, konbini de tsukaemasu.', en:'Can be used on trains, buses, and at convenience stores.' },
+      ]},
+      { title: 'Slide 10 — Rail Passes (JR EAST)', color: 'blue', phrases: [
+        { jp:'JRとうきょうワイドパス', rom:'JR Tōkyō Waido Pasu', en:'JR Tokyo Wide Pass — Adult ¥15,000 / Child ¥7,500' },
+        { jp:'JRイーストパス（ながの・にいがたエリア）', rom:'JR Īsuto Pasu (Nagano/Niigata area)', en:'JR East Pass Nagano/Niigata — Adult ¥27,000 / Child ¥13,500' },
+        { jp:'JRイーストパス（とうほくエリア・10日間）', rom:'JR Īsuto Pasu (Tōhoku, 10-nichi)', en:'JR East Pass Tohoku 10-day — Adult ¥48,000 / Child ¥24,000' },
+        { jp:'なりたエクスプレス（N\'EX）', rom:'Narita Ekusupuresu (N\'EX)', en:'Narita Express — direct train from Narita Airport to Tokyo/Shinjuku/Shibuya' },
+      ]},
+      { title: '💬 Situational dialogue — At the station', color: '', phrases: [
+        { jp:'すみません。しんじゅくえき は どこですか？', rom:'Sumimasen. Shinjuku-eki wa doko desuka?', en:'Excuse me. Where is Shinjuku Station?', role:'you' },
+        { jp:'まっすぐ いって、みぎに まがってください。', rom:'Massugu itte, migi ni magatte kudasai.', en:'Go straight, then turn right.', role:'staff' },
+        { jp:'ありがとうございます！', rom:'Arigatou gozaimasu!', en:'Thank you very much!', role:'you' },
+      ]},
+      { title: '💬 Situational dialogue — On the bus', color: '', phrases: [
+        { jp:'すみません。このバスは しぶやに いきますか？', rom:'Sumimasen. Kono basu wa Shibuya ni ikimasuka?', en:'Excuse me. Does this bus go to Shibuya?', role:'you' },
+        { jp:'はい、いきますよ。', rom:'Hai, ikimasu yo.', en:'Yes, it does!', role:'staff' },
+        { jp:'つぎのバスは なんじ ですか？', rom:'Tsugi no basu wa nanji desuka?', en:'What time is the next bus?', role:'you' },
+        { jp:'５ふんご です。', rom:'Go-fun go desu.', en:'In 5 minutes.', role:'staff' },
+        { jp:'ありがとうございます。', rom:'Arigatou gozaimasu.', en:'Thank you.', role:'you' },
+      ]},
+      { title: '💬 Situational dialogue — Buying a ticket', color: '', phrases: [
+        { jp:'きっぷ を かいたい です。', rom:'Kippu wo kaitai desu.', en:"I'd like to buy a ticket.", role:'you' },
+        { jp:'どこまで いきますか？', rom:'Doko made ikimasuka?', en:'Where are you going?', role:'staff' },
+        { jp:'とうきょうまで おとな ひとり おねがいします。', rom:'Tōkyō made, otona hitori onegaishimasu.', en:'To Tokyo, one adult please.', role:'you' },
+        { jp:'１２８０えんです。', rom:'Sennihyaku hachijū-en desu.', en:"That's 1,280 yen.", role:'staff' },
+      ]},
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════
+  // DIRECTIONS
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'directions', tab: '🗺️ Directions', title: 'みちあんない — Directions',
+    sub: 'All slides: places → direction words → て-form → example routes → ordinal blocks',
+    sections: [
+      { title: 'Slide 2 — Places vocabulary (ばしょ)', color: 'blue', phrases: [
+        { jp:'くうこう', rom:'kūkō', en:'Airport' },
+        { jp:'えき', rom:'eki', en:'Train station' },
+        { jp:'バスてい', rom:'basu tei', en:'Bus stop' },
+        { jp:'はし', rom:'hashi', en:'Bridge' },
+        { jp:'レストラン', rom:'resutoran', en:'Restaurant' },
+        { jp:'カフェ', rom:'kafe', en:'Cafe / Coffee shop' },
+        { jp:'ホテル', rom:'hoteru', en:'Hotel' },
+        { jp:'りょかん', rom:'ryokan', en:'Traditional Japanese inn' },
+      ]},
+      { title: 'Slide 3 — Direction words (↑↰↱)', color: '', phrases: [
+        { jp:'まっすぐ いきます', rom:'massugu ikimasu', en:'Go straight ↑', note:'まっすぐ = straight ahead' },
+        { jp:'みぎ に まがります', rom:'migi ni magarimasu', en:'Turn right ↱' },
+        { jp:'ひだり に まがります', rom:'hidari ni magarimasu', en:'Turn left ↰' },
+        { jp:'こうさてん', rom:'kōsaten', en:'Intersection / Crossroads ✛' },
+        { jp:'しんごう', rom:'shingō', en:'Traffic light 🚦' },
+        { jp:'かど', rom:'kado', en:'Corner (of a street)' },
+        { jp:'よこ', rom:'yoko', en:'Next to / Beside' },
+        { jp:'あいだ', rom:'aida', en:'Between' },
+        { jp:'まえ', rom:'mae', en:'In front of' },
+      ]},
+      { title: 'Slide 5 — て-form: chaining directions', color: 'purple', phrases: [
+        { jp:'いきます → いって', rom:'ikimasu → itte', en:'go → (and then) go', note:'Drop ます, use て-form to chain two instructions' },
+        { jp:'まがります → まがって', rom:'magarimasu → magatte', en:'turn → (and then) turn' },
+        { jp:'わたります → わたって', rom:'watarimasu → watatte', en:'cross → (and then) cross' },
+        { jp:'まっすぐ いってください。', rom:'Massugu itte kudasai.', en:'Please go straight.', role:'staff' },
+        { jp:'みぎに まがってください。', rom:'Migi ni magatte kudasai.', en:'Please turn right.', role:'staff' },
+        { jp:'はし を わたってください。', rom:'Hashi wo watatte kudasai.', en:'Please cross the bridge.', role:'staff' },
+      ]},
+      { title: 'Slide 4 — Core conversation pattern', color: '', phrases: [
+        { jp:'すみません。【えき】は どこですか？', rom:'Sumimasen. Eki wa doko desuka?', en:'Excuse me. Where is the [station]?', note:'Replace 【えき】with any place', role:'you' },
+        { jp:'まっすぐいって、みぎに まがってください。', rom:'Massugu itte, migi ni magatte kudasai.', en:'Go straight, then turn right.', role:'staff' },
+        { jp:'ありがとうございます！', rom:'Arigatou gozaimasu!', en:'Thank you very much!', role:'you' },
+      ]},
+      { title: 'Slide 6 — Combined direction sentences ①–③', color: '', phrases: [
+        { jp:'まっすぐいって、みぎにまがってください。', rom:'Massugu itte, migi ni magatte kudasai.', en:'例) Go straight, then turn right.', note:'Example pattern', role:'staff' },
+        { jp:'① まっすぐいって、ひだりにまがってください。', rom:'Massugu itte, hidari ni magatte kudasai.', en:'① Go straight, then turn left.', role:'staff' },
+        { jp:'② まっすぐいって、はしをわたってください。', rom:'Massugu itte, hashi wo watatte kudasai.', en:'② Go straight, then cross the bridge.', role:'staff' },
+        { jp:'③ みぎにまがって、まっすぐいってください。', rom:'Migi ni magatte, massugu itte kudasai.', en:'③ Turn right, then go straight.', role:'staff' },
+      ]},
+      { title: 'Slide 7 — Combined direction sentences ④–⑥', color: '', phrases: [
+        { jp:'④ まっすぐいって、こうさてんをみぎにまがってください。', rom:'Massugu itte, kōsaten wo migi ni magatte kudasai.', en:'④ Go straight, then turn right at the intersection.', role:'staff' },
+        { jp:'⑤ こうさてんをひだりにまがって、しんごうをひだりにまがってください。', rom:'Kōsaten wo hidari ni magatte, shingō wo hidari ni magatte kudasai.', en:'⑤ Turn left at the intersection, then turn left at the traffic light.', role:'staff' },
+        { jp:'⑥ まっすぐいって、はしをわたって、みぎにまがってください。', rom:'Massugu itte, hashi wo watatte, migi ni magatte kudasai.', en:'⑥ Go straight, cross the bridge, then turn right.', note:'3-step directions using て-form twice!', role:'staff' },
+      ]},
+      { title: 'Slide 8 — Ordinal blocks (ひとつめ・ふたつめ・みっつめ)', color: 'blue', phrases: [
+        { jp:'ひとつめ', rom:'hitotsu me', en:'The first one (1st block / street / corner)' },
+        { jp:'ふたつめ', rom:'futatsu me', en:'The second one (2nd block / street / corner)' },
+        { jp:'みっつめ', rom:'mittsu me', en:'The third one (3rd block / street / corner)' },
+        { jp:'ひとつめの こうさてんを みぎにまがってください。', rom:'Hitotsu me no kōsaten wo migi ni magatte kudasai.', en:'Turn right at the first intersection.', role:'staff' },
+        { jp:'ふたつめの しんごうを ひだりにまがってください。', rom:'Futatsu me no shingō wo hidari ni magatte kudasai.', en:'Turn left at the second traffic light.', role:'staff' },
+        { jp:'みっつめの かどを みぎにまがってください。', rom:'Mittsu me no kado wo migi ni magatte kudasai.', en:'Turn right at the third corner.', role:'staff' },
+      ]},
+      { title: '💬 Situational dialogue — Lost in the city', color: '', phrases: [
+        { jp:'すみません！ちょっと いいですか？', rom:'Sumimasen! Chotto ii desuka?', en:'Excuse me! Do you have a moment?', role:'you' },
+        { jp:'はい、どうぞ。', rom:'Hai, dōzo.', en:'Yes, go ahead!', role:'staff' },
+        { jp:'ホテルは どこですか？みちに まよいました。', rom:'Hoteru wa doko desuka? Michi ni mayoimashita.', en:'Where is the hotel? I got lost.', role:'you' },
+        { jp:'ああ、だいじょうぶですよ。まっすぐいって、しんごうをひだりにまがってください。', rom:'Ā, daijōbu desu yo. Massugu itte, shingō wo hidari ni magatte kudasai.', en:'Ah, no problem! Go straight and turn left at the traffic light.', role:'staff' },
+        { jp:'しんごうのあとは？', rom:'Shingō no ato wa?', en:'After the traffic light?', role:'you' },
+        { jp:'みぎてに ホテルが みえます。あるいて５ふんくらいです。', rom:'Migite ni hoteru ga miemasu. Aruite go-fun kurai desu.', en:'You\'ll see the hotel on your right. It\'s about a 5-minute walk.', role:'staff' },
+        { jp:'ありがとうございます！とても たすかりました！', rom:'Arigatou gozaimasu! Totemo tasukarimashita!', en:'Thank you so much! You really helped me!', role:'you' },
+        { jp:'きをつけて！', rom:'Ki wo tsukete!', en:'Take care!', role:'staff' },
+      ]},
+      { title: '💬 Situational dialogue — Asking a local for directions', color: '', phrases: [
+        { jp:'すみません。このちかくに コンビニは ありますか？', rom:'Sumimasen. Kono chikaku ni konbini wa arimasu ka?', en:'Excuse me. Is there a convenience store near here?', role:'you' },
+        { jp:'はい、あります。ひとつめの こうさてんを みぎにまがって、すぐです。', rom:'Hai, arimasu. Hitotsu me no kōsaten wo migi ni magatte, sugu desu.', en:'Yes, there is. Turn right at the first intersection, and it\'s right there.', role:'staff' },
+        { jp:'どのくらい かかりますか？', rom:'Donokurai kakarimasuka?', en:'How long will it take?', role:'you' },
+        { jp:'あるいて２～３ぷんです。', rom:'Aruite ni-san pun desu.', en:'About 2–3 minutes on foot.', role:'staff' },
+        { jp:'わかりました。ありがとうございます！', rom:'Wakarimashita. Arigatou gozaimasu!', en:'Got it. Thank you!', role:'you' },
+      ]},
+      { title: '📍 Useful direction extras', color: 'amber', phrases: [
+        { jp:'みちにまよいました。', rom:'Michi ni mayoimashita.', en:'I got lost.', role:'you' },
+        { jp:'ちずをみせてもらえますか？', rom:'Chizu wo misete moraemasu ka?', en:'Could you show me a map?', role:'you' },
+        { jp:'ここは どこですか？', rom:'Koko wa doko desuka?', en:'Where is this place? (pointing at map)', role:'you' },
+        { jp:'あるいて なんぷんですか？', rom:'Aruite nanpun desuka?', en:'How many minutes on foot?', role:'you' },
+        { jp:'ちかいですか？', rom:'Chikai desuka?', en:'Is it close?', role:'you' },
+        { jp:'とおいですか？', rom:'Tōi desuka?', en:'Is it far?', role:'you' },
+        { jp:'みぎてに あります。', rom:'Migite ni arimasu.', en:'It\'s on your right.', role:'staff' },
+        { jp:'ひだりてに あります。', rom:'Hidarite ni arimasu.', en:'It\'s on your left.', role:'staff' },
+        { jp:'あそこです。', rom:'Asoko desu.', en:'It\'s over there.', role:'staff' },
+        { jp:'すぐ そこです。', rom:'Sugu soko desu.', en:'It\'s right there / just ahead.', role:'staff' },
+      ]},
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════
+  // TAXI
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'taxi', tab: '🚕 Taxi', title: 'タクシー — Taking a Taxi',
+    sub: 'All slides: how to get a taxi, key phrases, and destination pattern',
+    sections: [
+      { title: 'Slide 1 — How to get a taxi in Japan', color: 'blue', phrases: [
+        { jp:'タクシー', rom:'takushī', en:'Taxi' },
+        { jp:'くうしゃ', rom:'kūsha', en:'Vacant / Available — look for the RED sign (空車)', note:'Red light = available! Green or blue = occupied or reserved' },
+        { jp:'GOアプリ', rom:'GO apuri', en:'GO taxi app — recommended for tourists (go.goinc.jp/lp/inbound)', note:'Easiest way to book — set your destination in English!' },
+      ]},
+      { title: 'Slide 2 — The key taxi phrase', color: '', phrases: [
+        { jp:'すみません。【おおさかじょう】まで おねがいします。', rom:'Sumimasen. Ōsakajō made onegaishimasu.', en:'Excuse me. To [Osaka Castle], please.', note:'Replace 【おおさかじょう】with any destination', role:'you' },
+        { jp:'わかりました。', rom:'Wakarimashita.', en:'Understood. / Got it.', role:'staff' },
+      ]},
+      { title: 'Practice — swap the destination', color: 'purple', phrases: [
+        { jp:'【えき】まで おねがいします。', rom:'Eki made onegaishimasu.', en:'To the station, please.', role:'you' },
+        { jp:'【ホテル】まで おねがいします。', rom:'Hoteru made onegaishimasu.', en:'To the hotel, please.', role:'you' },
+        { jp:'【くうこう】まで おねがいします。', rom:'Kūkō made onegaishimasu.', en:'To the airport, please.', role:'you' },
+        { jp:'【しんじゅくえき】まで おねがいします。', rom:'Shinjuku-eki made onegaishimasu.', en:'To Shinjuku Station, please.', role:'you' },
+        { jp:'【このじゅうしょ】まで おねがいします。', rom:'Kono jūsho made onegaishimasu.', en:'To this address, please.', note:'Show your phone screen if needed!', role:'you' },
+      ]},
+      { title: 'Useful taxi extras', color: 'amber', phrases: [
+        { jp:'ここで おろしてください。', rom:'Koko de oroshite kudasai.', en:'Please drop me off here.', role:'you' },
+        { jp:'つぎのかどで おろしてください。', rom:'Tsugi no kado de oroshite kudasai.', en:'Please drop me off at the next corner.', role:'you' },
+        { jp:'いくらですか？', rom:'Ikura desuka?', en:'How much is it?', role:'you' },
+        { jp:'カードで いいですか？', rom:'Kādo de ii desuka?', en:'Can I pay by card?', role:'you' },
+        { jp:'レシートを ください。', rom:'Reshīto wo kudasai.', en:'Please give me a receipt.', role:'you' },
+        { jp:'ドアは じどうです。', rom:'Doa wa jidō desu.', en:'The door is automatic.', note:'Taxi doors in Japan open and close automatically — don\'t touch!', role:'staff' },
+      ]},
+      { title: '💬 Situational dialogue — Taking a taxi to a landmark', color: '', phrases: [
+        { jp:'すみません！タクシー！', rom:'Sumimasen! Takushī!', en:'Excuse me! Taxi! (flagging one down)', role:'you' },
+        { jp:'はい、どうぞ。どちらまで？', rom:'Hai, dōzo. Dochira made?', en:'Yes, please get in. Where to?', role:'staff' },
+        { jp:'しぶやえきまで おねがいします。', rom:'Shibuya-eki made onegaishimasu.', en:'To Shibuya Station, please.', role:'you' },
+        { jp:'かしこまりました。', rom:'Kashikomarimashita.', en:'Certainly!', role:'staff' },
+        { jp:'どのくらい かかりますか？', rom:'Donokurai kakarimasuka?', en:'How long will it take?', role:'you' },
+        { jp:'だいたい じゅうごふんくらいです。', rom:'Daitai jūgo-fun kurai desu.', en:'About 15 minutes.', role:'staff' },
+        { jp:'ありがとうございます。ここで おろしてください。', rom:'Arigatou gozaimasu. Koko de oroshite kudasai.', en:'Thank you. Please drop me off here.', role:'you' },
+        { jp:'１８００えんです。', rom:'Sennihyaku-en desu.', en:'That\'s 1,800 yen.', role:'staff' },
+        { jp:'カードで いいですか？', rom:'Kādo de ii desuka?', en:'Can I pay by card?', role:'you' },
+        { jp:'はい、つかえます。', rom:'Hai, tsukaemasu.', en:'Yes, you can.', role:'staff' },
+      ]},
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════
+  // WHEN YOU'RE IN TROUBLE (SOS)
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'sos', tab: '🆘 SOS', title: 'こまったとき — When You\'re in Trouble',
+    sub: 'All slides: communication trouble → lost items → emergencies → kanji → culture tips',
+    sections: [
+      { title: 'Slide 2 — Communication trouble phrases ①–⑥', color: '', phrases: [
+        { jp:'① たすけて ください。', rom:'Tasukete kudasai.', en:'① Please help me.', role:'you' },
+        { jp:'② わかりません。', rom:'Wakarimasen.', en:'② I don\'t understand.', role:'you' },
+        { jp:'③ もういちど いいですか？', rom:'Mō ichido ii desuka?', en:'③ Could you say it again?', role:'you' },
+        { jp:'④ ゆっくり はなしてください。', rom:'Yukkuri hanashite kudasai.', en:'④ Please speak slowly.', role:'you' },
+        { jp:'⑤ えいごを はなしますか？', rom:'Eigo wo hanashimasu ka?', en:'⑤ Do you speak English?', role:'you' },
+        { jp:'⑥ ○○を なくしました。', rom:'○○ wo nakushimashita.', en:'⑥ I lost ○○.', note:'Replace ○○ with the lost item below', role:'you' },
+      ]},
+      { title: 'Slide 3 — Lost item vocabulary', color: 'blue', phrases: [
+        { jp:'さいふ', rom:'saifu', en:'Wallet' },
+        { jp:'スマホ', rom:'sumaho', en:'Smartphone' },
+        { jp:'かぎ', rom:'kagi', en:'Key' },
+        { jp:'パスポート', rom:'pasupōto', en:'Passport' },
+        { jp:'さいふを なくしました。', rom:'Saifu wo nakushimashita.', en:'I lost my wallet.', role:'you' },
+        { jp:'パスポートを なくしました。', rom:'Pasupōto wo nakushimashita.', en:'I lost my passport.', role:'you' },
+        { jp:'スマホを なくしました。', rom:'Sumaho wo nakushimashita.', en:'I lost my smartphone.', role:'you' },
+      ]},
+      { title: 'Slide 4 — Emergency phrases', color: 'amber', phrases: [
+        { jp:'① じしん です！', rom:'Jishin desu!', en:'① It\'s an earthquake!', note:'Drop, cover, hold on — テーブルの下にかくれて！', role:'you' },
+        { jp:'② つなみが きます！', rom:'Tsunami ga kimasu!', en:'② A tsunami is coming!', note:'Move to higher ground immediately!', role:'you' },
+        { jp:'③ たすけて（ください）！', rom:'Tasukete (kudasai)!', en:'③ Please help me! (urgent)', role:'you' },
+        { jp:'④ ひなんばしょは どこですか？', rom:'Hinan basho wa doko desuka?', en:'④ Where is the evacuation site?', role:'you' },
+        { jp:'⑤ けがを しました。', rom:'Kega wo shimashita.', en:'⑤ I\'m injured.', role:'you' },
+      ]},
+      { title: 'Slide 5 — Earthquake safety actions', color: 'amber', phrases: [
+        { jp:'テーブルのしたに かくれてください。', rom:'Tēburu no shita ni kakurete kudasai.', en:'① Drop, Cover, Hold On — get under a table, protect your head' },
+        { jp:'ゆれがとまるまで うごかないでください。', rom:'Yure ga tomaru made ugokanai de kudasai.', en:'② Stay indoors until shaking stops. Don\'t run outside.' },
+        { jp:'そとにいる ばあいは ひろいばしょへ いってください。', rom:'Soto ni iru baai wa hiroi basho e itte kudasai.', en:'③ If outside — move to open space away from buildings' },
+        { jp:'エレベーターをつかわないでください。かいだんをつかってください。', rom:'Erebētā wo tsukawanai de kudasai. Kaidan wo tsukatte kudasai.', en:'④ Use stairs — NOT the elevator during earthquake' },
+        { jp:'けがをかくにんしてください。がすをきってください。', rom:'Kega wo kakunin shite kudasai. Gasu wo kitte kudasai.', en:'⑤ After shaking: check for injuries, turn off gas, follow official updates' },
+      ]},
+      { title: 'Slide 6 — Tsunami safety actions', color: 'amber', phrases: [
+        { jp:'すぐに たかいところへ にげてください！', rom:'Sugu ni takai tokoro e nigete kudasai!', en:'① Move to higher ground IMMEDIATELY — hill, tall building, or tsunami evacuation area' },
+        { jp:'ひなんけいろにしたがってください。', rom:'Hinan keiro ni shitagatte kudasai.', en:'② Follow official evacuation routes — marked tsunami evacuation signs' },
+        { jp:'うみにちかづかないでください。', rom:'Umi ni chikazukanai de kudasai.', en:'③ Do NOT go back to the shore — tsunami comes in multiple waves' },
+        { jp:'「あんぜん」のほうそうをきいてください。', rom:'"Anzen" no hōsō wo kiite kudasai.', en:'④ Stay in safe area — listen to emergency broadcasts until "all clear"' },
+      ]},
+      { title: 'Slide 7 — Must-know Kanji signs', color: 'purple', phrases: [
+        { jp:'① 入口（いりぐち） ⇔ 出口（でぐち）', rom:'iriguchi ⇔ deguchi', en:'① Entrance ⇔ Exit', note:'You\'ll see these EVERYWHERE — stations, malls, restaurants' },
+        { jp:'② 男（おとこ） ⇔ 女（おんな）', rom:'otoko ⇔ onna', en:'② Men ⇔ Women (bathroom signs)', note:'男 = men, 女 = women' },
+        { jp:'③ 免税（めんぜい）', rom:'menzei', en:'③ Tax-free', note:'Look for this at shops — show your passport!' },
+        { jp:'④ 危ない（あぶない）', rom:'abunai', en:'④ Danger / Dangerous!', note:'Warning sign — stay away!' },
+        { jp:'空車（くうしゃ）', rom:'kūsha', en:'Vacant taxi (red sign = available)', note:'From the taxi lesson!' },
+        { jp:'非常口（ひじょうぐち）', rom:'hijōguchi', en:'Emergency exit', note:'Green running man sign — memorize this!' },
+        { jp:'禁止（きんし）', rom:'kinshi', en:'Prohibited / No ___ allowed' },
+        { jp:'営業中（えいぎょうちゅう）', rom:'eigyōchū', en:'Open (for business)' },
+        { jp:'準備中（じゅんびちゅう）', rom:'junbichū', en:'Closed / Preparing (not open yet)' },
+      ]},
+      { title: '💬 Situational dialogue — I lost my wallet', color: '', phrases: [
+        { jp:'すみません！たすけてください！', rom:'Sumimasen! Tasukete kudasai!', en:'Excuse me! Please help me!', role:'you' },
+        { jp:'どうしましたか？', rom:'Dō shimashita ka?', en:'What happened?', role:'staff' },
+        { jp:'さいふを なくしました。', rom:'Saifu wo nakushimashita.', en:'I lost my wallet.', role:'you' },
+        { jp:'どこで なくしましたか？', rom:'Doko de nakushimashita ka?', en:'Where did you lose it?', role:'staff' },
+        { jp:'えきの なかだと おもいます。', rom:'Eki no naka dato omoimasu.', en:'I think it was inside the station.', role:'you' },
+        { jp:'こうばんに いきましょう。', rom:'Kōban ni ikimashō.', en:'Let\'s go to the police box.', role:'staff' },
+        { jp:'ありがとうございます。えいごが わかりますか？', rom:'Arigatou gozaimasu. Eigo ga wakarimasu ka?', en:'Thank you. Do you understand English?', role:'you' },
+        { jp:'すこしだけ わかります。', rom:'Sukoshi dake wakarimasu.', en:'Just a little.', role:'staff' },
+        { jp:'ゆっくり はなしてください。', rom:'Yukkuri hanashite kudasai.', en:'Please speak slowly.', role:'you' },
+      ]},
+      { title: '💬 Situational dialogue — Language trouble', color: '', phrases: [
+        { jp:'すみません。わかりません。', rom:'Sumimasen. Wakarimasen.', en:'Excuse me. I don\'t understand.', role:'you' },
+        { jp:'もういちど いいですか？', rom:'Mō ichido ii desuka?', en:'Could you say it again?', role:'you' },
+        { jp:'ゆっくり はなしてください。', rom:'Yukkuri hanashite kudasai.', en:'Please speak slowly.', role:'you' },
+        { jp:'えいごを はなしますか？', rom:'Eigo wo hanashimasu ka?', en:'Do you speak English?', role:'you' },
+        { jp:'すこし はなせます。', rom:'Sukoshi hanasemasu.', en:'I can speak a little.', role:'staff' },
+        { jp:'これを かいてもらえますか？', rom:'Kore wo kaite moraemasu ka?', en:'Could you write this down for me?', role:'you' },
+        { jp:'グーグルほんやくをつかいましょう。', rom:'Gūguru hon\'yaku wo tsukaimashō.', en:'Let\'s use Google Translate!', role:'staff' },
+      ]},
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════
+  // JAPAN TIPS & CULTURE
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'tips', tab: '🎌 Japan Tips', title: 'アドバイス — Japan Tips & Culture',
+    sub: 'All slides: 7 essential tips, shrines, temples, quiz answers, and cultural know-how',
+    sections: [
+      { title: 'Slide — 7 Must-know tips for Japan', color: 'amber', phrases: [
+        { jp:'① げんきんを もちましょう。', rom:'Genkin wo mochimashō.', en:'① Always carry cash — some places don\'t accept cards even in big cities', note:'げんきん = cash' },
+        { jp:'② レストランのじかんを かくにんしましょう。', rom:'Resutoran no jikan wo kakunin shimashō.', en:'② Check restaurant hours — many close between lunch and dinner or have set closed days' },
+        { jp:'③ ごはんに はしを たてないでください。', rom:'Gohan ni hashi wo tatenai de kudasai.', en:'③ Don\'t stick chopsticks upright in rice — it\'s a funeral custom' },
+        { jp:'④ くつを ぬいでください。', rom:'Kutsu wo nuide kudasai.', en:'④ Take off your shoes when entering ryokan, temples, and many traditional spaces' },
+        { jp:'⑤ ごみばこが すくないです。ゴミを もちあるきましょう。', rom:'Gomibako ga sukunai desu. Gomi wo mochiarkimashō.', en:'⑤ Trash cans are rare in Japan — carry your trash, bring a small bag' },
+        { jp:'⑥ にもつがあるときは エレベーターを さがしましょう。', rom:'Nimotsu ga aru toki wa erebētā wo sagashimashō.', en:'⑥ Look for elevators if you have luggage — some station exits have only stairs' },
+        { jp:'⑦ じかんに よゆうを もちましょう。', rom:'Jikan ni yoyū wo mochimashō.', en:'⑦ Give yourself extra time — trains and buses in Japan are very punctual, don\'t be late!' },
+      ]},
+      { title: 'Slide — Shrine (じんじゃ) etiquette', color: 'blue', phrases: [
+        { jp:'じんじゃ', rom:'jinja', en:'Shinto shrine', note:'Look for the red torii gate at the entrance' },
+        { jp:'とりい', rom:'torii', en:'Torii gate — bow once before entering' },
+        { jp:'てを あらいます。', rom:'Te wo araimasu.', en:'Wash your hands and mouth at the water basin', note:'Step 1 before praying' },
+        { jp:'みちのはしを あるきます。', rom:'Michi no hashi wo arukimasu.', en:'Walk on the SIDE of the path — the center is sacred (for the gods)' },
+        { jp:'さいせんを なげます。', rom:'Saisen wo nagemasu.', en:'Throw a coin into the offering box' },
+        { jp:'にかい おじぎします。', rom:'Nikai ojigi shimasu.', en:'Bow twice (2 bows)' },
+        { jp:'にかい てをたたきます。', rom:'Nikai te wo tatakimasu.', en:'Clap twice (2 claps)' },
+        { jp:'もくそうします。', rom:'Mokusō shimasu.', en:'Pray silently' },
+        { jp:'いちかい おじぎします。', rom:'Ichikai ojigi shimasu.', en:'Bow once at the end (1 final bow)' },
+      ]},
+      { title: 'Slide — Temple (おてら) etiquette', color: 'blue', phrases: [
+        { jp:'おてら', rom:'otera', en:'Buddhist temple', note:'Different from a shrine — look for a large gate (山門)' },
+        { jp:'てをたたかないでください。', rom:'Te wo tatakanai de kudasai.', en:'No clapping at temples! (unlike shrines)', note:'This is the biggest mistake tourists make' },
+        { jp:'てをあわせて しずかに いのります。', rom:'Te wo awasete shizuka ni inorimasu.', en:'Join hands quietly and pray silently' },
+        { jp:'おこうの けむり は きよめるためです。', rom:'Okō no kemuri wa kiyomeru tame desu.', en:'Incense smoke is for purification — wave it toward yourself' },
+      ]},
+      { title: 'Slide — Onsen (おんせん) etiquette', color: 'blue', phrases: [
+        { jp:'おんせんにはいるまえに、なにをしますか？', rom:'Onsen ni hairu mae ni, nani wo shimasu ka?', en:'Before entering an onsen, what should you do?', note:'Quiz question from your lesson!' },
+        { jp:'からだを あらいます。', rom:'Karada wo araimasu.', en:'✅ Wash your body FIRST — this is mandatory before entering the onsen' },
+        { jp:'みずぎをきません。', rom:'Mizugi wo kimasen.', en:'Do NOT wear a swimsuit — onsen are entered without clothing' },
+        { jp:'タオルを おゆに つけないでください。', rom:'Taoru wo oyu ni tsukenai de kudasai.', en:'Don\'t put your towel in the water — fold it on your head' },
+        { jp:'いれずみのある かたは ご りようできません。', rom:'Irezumi no aru kata wa goriyō dekimasen.', en:'Tattoos are not allowed in most onsen', note:'Some places have exceptions — check in advance' },
+      ]},
+      { title: 'Slide — Escalator rules', color: '', phrases: [
+        { jp:'エスカレーター', rom:'eskarētā', en:'Escalator' },
+        { jp:'とうきょう・なごや・きょうと → ひだりにたちます。', rom:'Tōkyō / Nagoya / Kyoto → hidari ni tachimasu.', en:'Eastern Japan (Tokyo, Nagoya, Kyoto) → Stand on the LEFT, leave right open for walkers' },
+        { jp:'おおさか・こうべ → みぎにたちます。', rom:'Ōsaka / Kōbe → migi ni tachimasu.', en:'Western Japan (Osaka, Kobe) → Stand on the RIGHT, leave left open for walkers' },
+      ]},
+      { title: 'Slide — Japan quiz answers (culture)', color: 'purple', phrases: [
+        { jp:'りょかんにはいるまえに くつをぬぎます。', rom:'Ryokan ni hairu mae ni, kutsu wo nugimasu.', en:'Before entering a ryokan → take off your shoes ✅', note:'Quiz answer: A. くつをぬぎます' },
+        { jp:'じんじゃで てをあらいます。', rom:'Jinja de te wo araimasu.', en:'Before praying at a shrine → wash your hands ✅', note:'Quiz answer: A. てをあらいます' },
+        { jp:'しんかんせんでは たべてもいいです。でんしゃ（ローカル）ではたべません。', rom:'Shinkansen de wa tabete mo ii desu. Densha (rōkaru) de wa tabemasen.', en:'Can you eat on trains? Shinkansen ✅ yes — Local trains ✗ generally no', note:'Quiz answer: B. いいえ (not every train)' },
+        { jp:'とうきょうのエスカレーターは ひだりにたちます。', rom:'Tōkyō no eskarētā wa hidari ni tachimasu.', en:'In Tokyo, stand on the LEFT side of the escalator ✅', note:'Quiz answer: A. ひだりです' },
+        { jp:'にほんのコンビニでは ぜんぶできます。', rom:'Nihon no konbini de wa zenbu dekimasu.', en:'At a Japanese convenience store, you can do ALL of these (D. ぜんぶできます) ✅', note:'Buy coffee, use ATM, buy concert tickets — all possible!' },
+        { jp:'ふじさんの たかさは さんぜんななひゃくななじゅうろくメートルです。', rom:'Fujisan no takasa wa sanzen nanahyaku nanajūroku mētoru desu.', en:'Mt. Fuji is 3,776 meters tall ✅', note:'Quiz answer: C. さんぜんななひゃくななじゅうろくメートル' },
+      ]},
+      { title: '💬 Situational dialogue — At a shrine', color: '', phrases: [
+        { jp:'ここは じんじゃですか？', rom:'Koko wa jinja desuka?', en:'Is this a shrine?', role:'you' },
+        { jp:'はい、そうです！ゆうめいな じんじゃです。', rom:'Hai, sō desu! Yūmei na jinja desu.', en:'Yes, it is! It\'s a famous shrine.', role:'staff' },
+        { jp:'てを あらう ばしょは どこですか？', rom:'Te wo arau basho wa doko desuka?', en:'Where is the place to wash hands?', role:'you' },
+        { jp:'あそこです。いりぐちの そばです。', rom:'Asoko desu. Iriguchi no soba desu.', en:'It\'s over there, near the entrance.', role:'staff' },
+        { jp:'ありがとうございます。おまいりのしかたを おしえてもらえますか？', rom:'Arigatou gozaimasu. Omairi no shikata wo oshiete moraemasu ka?', en:'Thank you. Could you teach me how to pray?', role:'you' },
+        { jp:'もちろん！まず さいせんを なげて、にかい おじぎ、にかい てをたたいて、もくそうして、いちかい おじぎです。', rom:'Mochiron! Mazu saisen wo nagete, nikai ojigi, nikai te wo tataite, mokusō shite, ichikai ojigi desu.', en:'Of course! First throw a coin, bow twice, clap twice, pray silently, bow once.', role:'staff' },
+        { jp:'ありがとうございます！やってみます！', rom:'Arigatou gozaimasu! Yatte mimasu!', en:'Thank you! I\'ll give it a try!', role:'you' },
+      ]},
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════
+  // GRAMMAR & PARTICLES
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'grammar', tab: '📐 Grammar', title: 'ぶんぽう — Grammar & Particles',
+    sub: 'Sentence structure, particles, verb forms, and patterns from all your lessons',
+    sections: [
+
+      // ── SENTENCE STRUCTURE ──────────────────────────
+      { title: '① Basic sentence order — Subject → Object → Verb', color: 'blue', phrases: [
+        { jp:'English: I eat sushi.  →  Japanese: わたしは すしを たべます。', rom:'Watashi wa sushi wo tabemasu.', en:'Japanese puts the verb LAST. Subject → Object → Verb (SOV)', note:'The biggest difference from English!' },
+        { jp:'わたしは みずを のみます。', rom:'Watashi wa mizu wo nomimasu.', en:'I drink water.', note:'わたし(I) は(topic) みず(water) を(object) のみます(drink)' },
+        { jp:'ドノバンは ラーメンを たべます。', rom:'Donoban wa rāmen wo tabemasu.', en:'Donovan eats ramen.', note:'Name は food を verb' },
+        { jp:'わたしは にほんに いきます。', rom:'Watashi wa Nihon ni ikimasu.', en:'I go to Japan.', note:'に marks the destination' },
+      ]},
+
+      // ── PARTICLES ───────────────────────────────────
+      { title: '② Particle は (wa) — Topic marker', color: '', phrases: [
+        { jp:'は', rom:'wa', en:'Topic marker — "as for ___" / "speaking of ___"', note:'Written as は (ha) but pronounced "wa" as a particle' },
+        { jp:'わたし は ドノバンです。', rom:'Watashi wa Donoban desu.', en:'I am Donovan.', note:'は marks わたし as the topic' },
+        { jp:'ちょうしょく は どこですか？', rom:'Chōshoku wa doko desuka?', en:'Where is breakfast?', note:'は marks ちょうしょく as the topic' },
+        { jp:'レストラン は なんじからですか？', rom:'Resutoran wa nanji kara desuka?', en:'What time does the restaurant open?', note:'は marks レストラン as the topic' },
+        { jp:'Aさん は？', rom:'A-san wa?', en:'How about A? / What about you?', note:'Short form — drop everything else and just say は?' },
+      ]},
+      { title: '③ Particle が (ga) — Subject / emphasis marker', color: '', phrases: [
+        { jp:'が', rom:'ga', en:'Subject marker — used for emphasis, likes/dislikes, ability', note:'が puts the spotlight on the subject' },
+        { jp:'スポーツ が すきです。', rom:'Supōtsu ga suki desu.', en:'I like sports.', note:'が used with すき (like) and きらい (dislike)' },
+        { jp:'おんがく が すきです。', rom:'Ongaku ga suki desu.', en:'I like music.' },
+        { jp:'にほんご が すこしわかります。', rom:'Nihongo ga sukoshi wakarimasu.', en:'I understand Japanese a little.', note:'が used with わかる (understand) and できる (can do)' },
+        { jp:'なにが すきですか？', rom:'Nani ga suki desuka?', en:'What do you like?', role:'staff' },
+      ]},
+      { title: '④ Particle を (wo) — Object marker', color: '', phrases: [
+        { jp:'を', rom:'wo', en:'Object marker — marks what the verb is acting on', note:'Written を, pronounced "o"' },
+        { jp:'ラーメン を たべます。', rom:'Rāmen wo tabemasu.', en:'(I) eat ramen.', note:'を marks ラーメン as what is being eaten' },
+        { jp:'みず を のみます。', rom:'Mizu wo nomimasu.', en:'(I) drink water.' },
+        { jp:'きっぷ を かいたいです。', rom:'Kippu wo kaitai desu.', en:'I want to buy a ticket.', note:'を from your transport lesson!' },
+        { jp:'にもつ を あずけたいです。', rom:'Nimotsu wo azuketai desu.', en:'I want to leave my luggage.', note:'を from your hotel lesson!' },
+        { jp:'はし を わたってください。', rom:'Hashi wo watatte kudasai.', en:'Please cross the bridge.', note:'を from your directions lesson!' },
+      ]},
+      { title: '⑤ Particle に (ni) — Direction / location / time', color: '', phrases: [
+        { jp:'に', rom:'ni', en:'Direction, destination, location, time, or indirect object marker', note:'Very versatile! Context tells you which meaning' },
+        { jp:'にほん に いきます。', rom:'Nihon ni ikimasu.', en:'I go TO Japan.', note:'に = to / toward (direction)' },
+        { jp:'○○に いきますか？', rom:'○○ ni ikimasuka?', en:'Does this go TO ○○?', note:'に from your transport lesson' },
+        { jp:'ろくじ に たべます。', rom:'Rokuji ni tabemasu.', en:'I eat AT 6 o\'clock.', note:'に = at (specific time)' },
+        { jp:'レストラン に あります。', rom:'Resutoran ni arimasu.', en:'It is AT the restaurant.', note:'に = location of existence' },
+        { jp:'みぎ に まがってください。', rom:'Migi ni magatte kudasai.', en:'Please turn TO the right.', note:'に = direction of movement' },
+      ]},
+      { title: '⑥ Particle で (de) — Location of action / means / instrument', color: '', phrases: [
+        { jp:'で', rom:'de', en:'Where an action happens; or the means/tool used', note:'Different from に — で is WHERE you DO something' },
+        { jp:'レストラン で たべます。', rom:'Resutoran de tabemasu.', en:'I eat AT the restaurant.', note:'で = place where action happens' },
+        { jp:'ドンキ で スキンケアを かいたいです。', rom:'Donki de sukinkeā wo kaitai desu.', en:'I want to buy skincare AT Don Quijote.', note:'で from your transport lesson!' },
+        { jp:'カード で いいですか？', rom:'Kādo de ii desuka?', en:'Is card OK? / Can I pay BY card?', note:'で = means / instrument' },
+        { jp:'バス で いきます。', rom:'Basu de ikimasu.', en:'I go BY bus.', note:'で = means of transport' },
+        { jp:'にほんご で はなします。', rom:'Nihongo de hanashimasu.', en:'I speak IN Japanese.', note:'で = language used' },
+      ]},
+      { title: '⑦ Particle の (no) — Possession / connection', color: '', phrases: [
+        { jp:'の', rom:'no', en:'Connects two nouns — possession, belonging, description', note:'Like apostrophe-s in English: AのB = "A\'s B"' },
+        { jp:'わたし の なまえ は ドノバンです。', rom:'Watashi no namae wa Donoban desu.', en:'My name is Donovan.', note:'わたしの = my' },
+        { jp:'アメリカ の ケンタッキー', rom:'Amerika no Kentakkī', en:'Kentucky OF America', note:'の connects the two place names' },
+        { jp:'ひとつめ の こうさてん', rom:'Hitotsu me no kōsaten', en:'The FIRST intersection', note:'の from your directions lesson!' },
+        { jp:'つぎ の バス は なんじですか？', rom:'Tsugi no basu wa nanji desuka?', en:'What time is the NEXT bus?', note:'つぎの = next (の connects)' },
+        { jp:'ホットコーヒー の M', rom:'Hotto kōhī no M', en:'Medium (size) hot coffee', note:'の from your cafe lesson!' },
+      ]},
+      { title: '⑧ Particle から (kara) & まで (made) — From & until', color: '', phrases: [
+        { jp:'から', rom:'kara', en:'From / Starting from / Since / Because', note:'Starting point in time or place' },
+        { jp:'まで', rom:'made', en:'Until / Up to / As far as', note:'Ending point in time or place' },
+        { jp:'ろくじ から です。', rom:'Rokuji kara desu.', en:'It starts from 6:00.', note:'から from your hotel lesson!' },
+        { jp:'じゅうじ まで です。', rom:'Jūji made desu.', en:'Until 10:00.', note:'まで from your hotel lesson!' },
+        { jp:'ケンタッキー から きました。', rom:'Kentakkī kara kimashita.', en:'I came FROM Kentucky.', note:'から = from (place of origin)' },
+        { jp:'とうきょう まで おとな ひとり。', rom:'Tōkyō made otona hitori.', en:'One adult ticket to Tokyo.', note:'まで = as far as (destination)' },
+      ]},
+      { title: '⑨ Particle も (mo) — Also / Too / Either', color: '', phrases: [
+        { jp:'も', rom:'mo', en:'"Also" / "Too" — replaces は or が to add inclusion', note:'Swap は or が with も to say "me too" or "also"' },
+        { jp:'わたし も げんきです。', rom:'Watashi mo genki desu.', en:'I\'m well TOO.', note:'も replaces は from your greetings lesson!' },
+        { jp:'これ も ください。', rom:'Kore mo kudasai.', en:'Please give me this ONE TOO.', role:'you' },
+        { jp:'ひるごはん も たべましたか？', rom:'Hirughohan mo tabemashita ka?', en:'Did you eat lunch TOO?', role:'staff' },
+      ]},
+
+      // ── VERB FORMS ──────────────────────────────────
+      { title: '⑩ Verb endings — ます (masu) form (polite)', color: 'purple', phrases: [
+        { jp:'～ます', rom:'~masu', en:'Polite present / future tense — use this in daily life', note:'This is the form you\'ve been using in all lessons!' },
+        { jp:'たべます', rom:'tabemasu', en:'eat / will eat' },
+        { jp:'のみます', rom:'nomimasu', en:'drink / will drink' },
+        { jp:'いきます', rom:'ikimasu', en:'go / will go' },
+        { jp:'かいます', rom:'kaimasu', en:'buy / will buy' },
+        { jp:'わかります', rom:'wakarimasu', en:'understand' },
+        { jp:'あります', rom:'arimasu', en:'there is / have (for things)' },
+        { jp:'います', rom:'imasu', en:'there is / am (for people/animals)' },
+      ]},
+      { title: '⑪ ～ません (masen) — Negative form', color: 'purple', phrases: [
+        { jp:'～ません', rom:'~masen', en:'Polite negative — "do not ___"', note:'Change ます → ません to negate' },
+        { jp:'たべません。', rom:'Tabemasen.', en:'I don\'t eat / won\'t eat.' },
+        { jp:'わかりません。', rom:'Wakarimasen.', en:'I don\'t understand.', note:'Very useful! Say this when lost in conversation' },
+        { jp:'にほんごが わかりません。', rom:'Nihongo ga wakarimasen.', en:'I don\'t understand Japanese.', role:'you' },
+        { jp:'えいごが わかりますか？', rom:'Eigo ga wakarimasu ka?', en:'Do you understand English?', role:'you' },
+      ]},
+      { title: '⑫ ～ました (mashita) — Past tense', color: 'purple', phrases: [
+        { jp:'～ました', rom:'~mashita', en:'Polite past tense — "did ___"', note:'Change ます → ました' },
+        { jp:'たべました。', rom:'Tabemashita.', en:'I ate.' },
+        { jp:'いきました。', rom:'Ikimashita.', en:'I went.' },
+        { jp:'ケンタッキーから きました。', rom:'Kentakkī kara kimashita.', en:'I came from Kentucky.', note:'きました from your intro lesson!' },
+        { jp:'みちに まよいました。', rom:'Michi ni mayoimashita.', en:'I got lost.', note:'まよいました from your directions lesson!' },
+      ]},
+      { title: '⑬ ～たい (tai) — Want to ___', color: 'purple', phrases: [
+        { jp:'～たいです', rom:'~tai desu', en:'"I want to ___" — drop ます, add たい', note:'From your transportation lesson!' },
+        { jp:'かいます → かいたいです', rom:'kaimasu → kaitai desu', en:'buy → want to buy' },
+        { jp:'たべます → たべたいです', rom:'tabemasu → tabetai desu', en:'eat → want to eat' },
+        { jp:'のみます → のみたいです', rom:'nomimasu → nomitai desu', en:'drink → want to drink' },
+        { jp:'いきます → いきたいです', rom:'ikimasu → ikitai desu', en:'go → want to go' },
+        { jp:'とんかつを たべたいです。', rom:'Tonkatsu wo tabetai desu.', en:'I want to eat tonkatsu.', role:'you' },
+        { jp:'にほんに いきたいです。', rom:'Nihon ni ikitai desu.', en:'I want to go to Japan.', role:'you' },
+      ]},
+      { title: '⑭ ～て + ください (te kudasai) — Please do ___', color: 'purple', phrases: [
+        { jp:'～てください', rom:'~te kudasai', en:'"Please ___" — polite request using て-form', note:'From your directions lesson! Chain multiple actions with て' },
+        { jp:'いきます → いって → まっすぐ いってください。', rom:'ikimasu → itte → massugu itte kudasai', en:'go → going → Please go straight.' },
+        { jp:'まがります → まがって → みぎに まがってください。', rom:'magarimasu → magatte → migi ni magatte kudasai', en:'turn → turning → Please turn right.' },
+        { jp:'わたります → わたって → はしを わたってください。', rom:'watarimasu → watatte → hashi wo watatte kudasai', en:'cross → crossing → Please cross the bridge.' },
+        { jp:'みせます → みせて → パスポートを みせてください。', rom:'misemasu → misete → pasupōto wo misete kudasai', en:'show → showing → Please show me your passport.' },
+      ]},
+
+      // ── KEY PATTERNS ────────────────────────────────
+      { title: '⑮ A は B です — "A is B" pattern', color: '', phrases: [
+        { jp:'A は B です。', rom:'A wa B desu.', en:'"A is B." — the most fundamental Japanese sentence', note:'です = am/is/are (polite). This pattern is everywhere!' },
+        { jp:'わたしは ドノバンです。', rom:'Watashi wa Donoban desu.', en:'I am Donovan.' },
+        { jp:'これは なんですか？', rom:'Kore wa nan desuka?', en:'What is this?', note:'これ = this, なん = what' },
+        { jp:'ちょうしょくは ６じからです。', rom:'Chōshoku wa rokuji kara desu.', en:'Breakfast is from 6:00.' },
+        { jp:'ふたりです。', rom:'Futari desu.', en:'(We are) two people.', note:'Short form — drop わたしたちは in casual speech' },
+      ]},
+      { title: '⑯ ～はどこですか — "Where is ___?" pattern', color: '', phrases: [
+        { jp:'【場所】は どこ ですか？', rom:'[place] wa doko desuka?', en:'Where is [place]?', note:'どこ = where. This exact pattern from all your lessons!' },
+        { jp:'えきは どこですか？', rom:'Eki wa doko desuka?', en:'Where is the station?', role:'you' },
+        { jp:'ちょうしょくは どこですか？', rom:'Chōshoku wa doko desuka?', en:'Where is breakfast?', role:'you' },
+        { jp:'トイレは どこですか？', rom:'Toire wa doko desuka?', en:'Where is the bathroom?', role:'you' },
+        { jp:'フロントは どこですか？', rom:'Furonto wa doko desuka?', en:'Where is the front desk?', role:'you' },
+      ]},
+      { title: '⑰ ～はなんじ から/まで ですか — "What time?" pattern', color: '', phrases: [
+        { jp:'【場所】は なんじ から ですか？', rom:'[place] wa nanji kara desuka?', en:'What time does [place] open?', note:'なんじ = what time. から = from. まで = until' },
+        { jp:'【場所】は なんじ まで ですか？', rom:'[place] wa nanji made desuka?', en:'Until what time is [place] open?' },
+        { jp:'つぎの【バス】は なんじですか？', rom:'Tsugi no basu wa nanji desuka?', en:'What time is the next bus?' },
+        { jp:'【ろくじ】からです。', rom:'Rokuji kara desu.', en:'From 6:00.' },
+        { jp:'【じゅうじ】までです。', rom:'Jūji made desu.', en:'Until 10:00.' },
+      ]},
+      { title: '⑱ ～は ありますか — "Do you have ___?" pattern', color: '', phrases: [
+        { jp:'【もの】は ありますか？', rom:'[thing] wa arimasu ka?', en:'Do you have [thing]? / Is there [thing]?', note:'ありますか = do you have? / is there? (for objects)' },
+        { jp:'アーモンドミルク ありますか？', rom:'Āmondo miruku arimasu ka?', en:'Do you have almond milk?', note:'から your cafe lesson!' },
+        { jp:'ベジタリアンメニューは ありますか？', rom:'Bejitarian menyū wa arimasu ka?', en:'Do you have a vegetarian menu?', role:'you' },
+        { jp:'えいごのメニューは ありますか？', rom:'Eigo no menyū wa arimasu ka?', en:'Do you have an English menu?', role:'you' },
+        { jp:'このちかくに コンビニは ありますか？', rom:'Kono chikaku ni konbini wa arimasu ka?', en:'Is there a convenience store near here?', role:'you' },
+      ]},
+      { title: '⑲ ～を おねがいします — "Please give me / I\'d like ___"', color: '', phrases: [
+        { jp:'【もの】を おねがいします。', rom:'[thing] wo onegaishimasu.', en:'"I\'d like [thing], please." — your most-used ordering phrase', note:'Works in restaurants, hotels, stations — everywhere!' },
+        { jp:'ラーメンを ひとつ おねがいします。', rom:'Rāmen wo hitotsu onegaishimasu.', en:'One ramen, please.' },
+        { jp:'チェックインを おねがいします。', rom:'Chekku in wo onegaishimasu.', en:'I\'d like to check in, please.' },
+        { jp:'おかいけいを おねがいします。', rom:'Okaikei wo onegaishimasu.', en:'The bill, please.' },
+        { jp:'ちゅうもんを おねがいします。', rom:'Chūmon wo onegaishimasu.', en:'I\'d like to order, please.' },
+      ]},
+      { title: '⑳ Useful sentence-ending patterns', color: 'amber', phrases: [
+        { jp:'～ですか？', rom:'~desuka?', en:'Is it ___? / Are you ___? — turns a statement into a yes/no question', note:'Add か to any sentence to make it a question' },
+        { jp:'～ください。', rom:'~kudasai.', en:'Please give me ___ / Please do ___', note:'More direct than おねがいします but still polite' },
+        { jp:'～ね', rom:'~ne', en:'Right? / Isn\'t it? — seeks agreement (like "right?" in English)', note:'Soft and friendly. ね adds warmth to sentences' },
+        { jp:'～よ', rom:'~yo', en:'I\'m telling you! / For sure! — adds assertion or emphasis', note:'Stronger than ね — giving new info or reassuring' },
+        { jp:'～よね', rom:'~yone', en:'That\'s right, isn\'t it? — combines both', note:'Very common in natural conversation' },
+        { jp:'～かな', rom:'~kana', en:'I wonder ___? — thinking aloud to yourself', note:'Casual self-questioning. Very natural to use' },
+        { jp:'だいじょうぶです。', rom:'Daijōbu desu.', en:'It\'s okay / No problem / I\'m fine', note:'THE most versatile phrase — your all-purpose answer!' },
+      ]},
+
+      // ── USEFUL QUESTION WORDS ────────────────────────
+      { title: '㉑ Question words (疑問詞)', color: 'blue', phrases: [
+        { jp:'なに / なん', rom:'nani / nan', en:'What?', note:'なん before です/で/の; なに before を/が' },
+        { jp:'どこ', rom:'doko', en:'Where?' },
+        { jp:'だれ', rom:'dare', en:'Who?' },
+        { jp:'いつ', rom:'itsu', en:'When?' },
+        { jp:'なんじ', rom:'nanji', en:'What time?' },
+        { jp:'いくら', rom:'ikura', en:'How much?' },
+        { jp:'なんにん', rom:'nannin', en:'How many people?' },
+        { jp:'どのくらい', rom:'donokurai', en:'How long? / How much? (amount/duration)' },
+        { jp:'どれ', rom:'dore', en:'Which one? (from 3+)' },
+        { jp:'どう', rom:'dō', en:'How? / In what way?' },
+        { jp:'なぜ / どうして', rom:'naze / dōshite', en:'Why?' },
+      ]},
+
+      // ── DEMO DIALOGUE ───────────────────────────────
+      { title: '💬 Grammar in action — spot every particle!', color: '', phrases: [
+        { jp:'すみません。わたしは アメリカじんです。にほんごが すこし わかります。', rom:'Sumimasen. Watashi wa Amerikajin desu. Nihongo ga sukoshi wakarimasu.', en:'Excuse me. I\'m American. I understand Japanese a little.', note:'は = topic, が = subject of ability', role:'you' },
+        { jp:'そうですか！じょうずですね！どこから きましたか？', rom:'Sō desuka! Jōzu desu ne! Doko kara kimashita ka?', en:'Is that so! You\'re good! Where did you come from?', note:'から = from, ね = "isn\'t it?" ending', role:'staff' },
+        { jp:'ケンタッキーから きました。いまは ホテルに います。', rom:'Kentakkī kara kimashita. Ima wa hoteru ni imasu.', en:'I came from Kentucky. Right now I\'m at the hotel.', note:'から = from, に = location, は = topic switch', role:'you' },
+        { jp:'いいですね！なにを たべたいですか？', rom:'Ii desu ne! Nani wo tabetai desuka?', en:'Nice! What do you want to eat?', note:'を = object marker, たい = want to', role:'staff' },
+        { jp:'とんかつを たべたいです。どこに おいしいレストランが ありますか？', rom:'Tonkatsu wo tabetai desu. Doko ni oishii resutoran ga arimasu ka?', en:'I want to eat tonkatsu. Where is a good restaurant?', note:'を = object, に = location, が = subject of existence', role:'you' },
+        { jp:'えきの よこに ありますよ！まっすぐいって、みぎに まがってください。', rom:'Eki no yoko ni arimasu yo! Massugu itte, migi ni magatte kudasai.', en:'There\'s one next to the station! Go straight and turn right.', note:'の = connection, に = location, よ = assertive ending, て = chaining', role:'staff' },
+      ]},
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════
+  // KANA — rendered separately via renderKana()
+  // ═══════════════════════════════════════════════════
+  { id: 'kana', tab: '🔤 Kana', title: 'ひらがな & カタカナ', sub: '__KANA__', sections: [] },
+
+  // ═══════════════════════════════════════════════════
+  // GREETINGS
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'greetings', tab: '👋 Greetings', title: 'あいさつ — Everyday Greetings',
+    sub: 'Essential greetings, expressions, and meal phrases',
+    sections: [
+      { title: 'Daily greetings', color: '', phrases: [
+        { jp:'おはようございます', rom:'Ohayou gozaimasu', en:'Good morning', note:'Use before ~10am' },
+        { jp:'こんにちは', rom:'Konnichiwa', en:'Hello / Good afternoon' },
+        { jp:'こんばんは', rom:'Konbanwa', en:'Good evening' },
+        { jp:'げんきですか？', rom:'Genki desuka?', en:'How are you?' },
+        { jp:'げんきです！', rom:'Genki desu!', en:"I'm good / I'm well!" },
+        { jp:'ありがとうございます', rom:'Arigatou gozaimasu', en:'Thank you very much' },
+        { jp:'すみません', rom:'Sumimasen', en:'Excuse me / Sorry (very versatile!)' },
+        { jp:'おねがいします', rom:'Onegaishimasu', en:"Please / I'd like this" },
+        { jp:'じゃあね / またね', rom:'Jā ne / Mata ne', en:'See you / Bye (casual)' },
+        { jp:'おやすみなさい', rom:'Oyasuminasai', en:'Good night' },
+      ]},
+      { title: 'Meal expressions', color: 'amber', phrases: [
+        { jp:'いただきます', rom:'Itadakimasu', en:'Thank you for the meal (said before eating)', note:'Say before every meal!' },
+        { jp:'ごちそうさまでした', rom:'Gochisōsamadeshita', en:'Thank you for the meal (said after eating)', note:'Say when you finish — staff will appreciate it!' },
+      ]},
+      { title: '💬 Situational dialogue — Meeting someone', color: '', phrases: [
+        { jp:'おはようございます！げんきですか？', rom:'Ohayou gozaimasu! Genki desuka?', en:'Good morning! How are you?', role:'you' },
+        { jp:'げんきです！ドノバンさんは？', rom:'Genki desu! Donoban-san wa?', en:'I\'m well! How about you, Donovan?', role:'staff' },
+        { jp:'わたしも げんきです。ありがとうございます！', rom:'Watashi mo genki desu. Arigatou gozaimasu!', en:'I\'m well too. Thank you!', role:'you' },
+      ]},
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════
+  // SELF INTRODUCTION
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'intro', tab: '🙋 Introduction', title: 'じこしょうかい — Self Introduction',
+    sub: "Build and practice Donovan's full introduction",
+    sections: [
+      { title: 'Introduction building blocks', color: '', phrases: [
+        { jp:'わたしは〇〇です。', rom:'Watashi wa [name] desu.', en:'I am [name].', note:'Replace 〇〇 with your name' },
+        { jp:'アメリカじんです。', rom:'Amerikajin desu.', en:'I am American.', note:'[country] + じん = nationality' },
+        { jp:'ケンタッキーからきました。', rom:'Kentakkī kara kimashita.', en:"I'm from Kentucky.", note:'から = from · きました = came' },
+        { jp:'スポーツが すきです。', rom:'Supōtsu ga suki desu.', en:'I like sports.' },
+        { jp:'おんがくが すきです。', rom:'Ongaku ga suki desu.', en:'I like music.' },
+        { jp:'ビデオゲームが すきです。', rom:'Bideo gēmu ga suki desu.', en:'I like video games.' },
+        { jp:'よろしくおねがいします。', rom:'Yoroshiku onegaishimasu.', en:'Nice to meet you! / Please take care of me.', note:'Always end introductions with this' },
+      ]},
+      { title: "🔊 Donovan's full introduction — play and repeat!", color: 'purple', phrases: [
+        { jp:'わたしは ドノバン です。アメリカじんです。ケンタッキーから きました。スポーツと おんがくと ビデオゲームが すきです。よろしく おねがいします！',
+          rom:'Watashi wa Donoban desu. Amerikajin desu. Kentakkī kara kimashita. Supōtsu to ongaku to bideo gēmu ga suki desu. Yoroshiku onegaishimasu!',
+          en:"I'm Donovan. I'm American. I'm from Kentucky. I like sports, music, and video games. Nice to meet you!",
+          note:'Play it, then say it back from memory!' },
+      ]},
+      { title: '💬 Situational dialogue — Meeting a local', color: '', phrases: [
+        { jp:'はじめまして。わたしは ドノバン です。', rom:'Hajimemashite. Watashi wa Donoban desu.', en:'Nice to meet you. I\'m Donovan.', role:'you' },
+        { jp:'はじめまして！どこから きましたか？', rom:'Hajimemashite! Doko kara kimashita ka?', en:'Nice to meet you! Where are you from?', role:'staff' },
+        { jp:'アメリカの ケンタッキーから きました。', rom:'Amerika no Kentakkī kara kimashita.', en:'I\'m from Kentucky, America.', role:'you' },
+        { jp:'わあ、すごい！にほんは はじめてですか？', rom:'Wā, sugoi! Nihon wa hajimete desuka?', en:'Wow, amazing! Is this your first time in Japan?', role:'staff' },
+        { jp:'はい、はじめてです！たのしみにしています！', rom:'Hai, hajimete desu! Tanoshimi ni shite imasu!', en:'Yes, first time! I\'m really looking forward to it!', role:'you' },
+      ]},
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════
+  // NUMBERS
+  // ═══════════════════════════════════════════════════
+  {
+    id: 'numbers', tab: '🔢 Numbers', title: '数字 — Numbers',
+    sub: 'Prices, times, floors, and ordering quantities',
+    sections: [
+      { title: '1–10 (memorize these first)', color: '', phrases: [
+        { jp:'いち', rom:'ichi', en:'1' }, { jp:'に', rom:'ni', en:'2' },
+        { jp:'さん', rom:'san', en:'3' }, { jp:'よん / し', rom:'yon / shi', en:'4' },
+        { jp:'ご', rom:'go', en:'5' }, { jp:'ろく', rom:'roku', en:'6' },
+        { jp:'なな / しち', rom:'nana / shichi', en:'7' }, { jp:'はち', rom:'hachi', en:'8' },
+        { jp:'きゅう / く', rom:'kyū / ku', en:'9' }, { jp:'じゅう', rom:'jū', en:'10' },
+      ]},
+      { title: 'Bigger numbers', color: 'blue', phrases: [
+        { jp:'じゅういち', rom:'jūichi', en:'11' }, { jp:'にじゅう', rom:'nijū', en:'20' },
+        { jp:'さんじゅうよん', rom:'sanjūyon', en:'34' }, { jp:'ひゃく', rom:'hyaku', en:'100' },
+        { jp:'せん', rom:'sen', en:'1,000' }, { jp:'いちまん', rom:'ichiman', en:'10,000' },
+      ]},
+      { title: 'Counting items — for ordering food', color: '', phrases: [
+        { jp:'ひとつ', rom:'hitotsu', en:'1 item' }, { jp:'ふたつ', rom:'futatsu', en:'2 items' },
+        { jp:'みっつ', rom:'mittsu', en:'3 items' }, { jp:'よっつ', rom:'yottsu', en:'4 items' },
+        { jp:'いつつ', rom:'itsutsu', en:'5 items' },
+      ]},
+      { title: 'Counting PEOPLE — にん (nin)', color: 'blue', phrases: [
+        { jp:'ひとり', rom:'hitori', en:'1 person', note:'★ Irregular — NOT いちにん!' },
+        { jp:'ふたり', rom:'futari', en:'2 people', note:'★ Irregular — NOT ににん! Use this at every restaurant' },
+        { jp:'さんにん', rom:'san-nin', en:'3 people' },
+        { jp:'よにん', rom:'yo-nin', en:'4 people', note:'★ Use よ not し — しにん means something else!' },
+        { jp:'ごにん', rom:'go-nin', en:'5 people' },
+        { jp:'ろくにん', rom:'roku-nin', en:'6 people' },
+        { jp:'しちにん / ななにん', rom:'shichi-nin / nana-nin', en:'7 people' },
+        { jp:'はちにん', rom:'hachi-nin', en:'8 people' },
+        { jp:'きゅうにん', rom:'kyū-nin', en:'9 people' },
+        { jp:'じゅうにん', rom:'jū-nin', en:'10 people' },
+        { jp:'なんにん', rom:'nan-nin', en:'How many people?', note:'Staff ask this at restaurants — なんめいさまですか？is the polite form' },
+      ]},
+      { title: 'Counting people — in sentences', color: '', phrases: [
+        { jp:'【ひとり】です。', rom:'Hitori desu.', en:'One person. / Just me.', role:'you' },
+        { jp:'【ふたり】です。', rom:'Futari desu.', en:'Two people, please.', note:'The phrase from your restaurant lesson!', role:'you' },
+        { jp:'【さんにん】です。', rom:'San-nin desu.', en:'Three people.', role:'you' },
+        { jp:'【よにん】です。', rom:'Yo-nin desu.', en:'Four people.', role:'you' },
+        { jp:'おとな【ふたり】と こども【ひとり】です。', rom:'Otona futari to kodomo hitori desu.', en:'Two adults and one child.', note:'おとな = adult · こども = child · と = and', role:'you' },
+        { jp:'おとな ひとり おねがいします。', rom:'Otona hitori onegaishimasu.', en:'One adult, please. (e.g. buying a ticket)', role:'you' },
+        { jp:'なんめいさまですか？', rom:'Nanmeisama desuka?', en:'How many people in your party?', note:'Formal restaurant greeting — you know this one!', role:'staff' },
+      ]},
+      { title: '★ The two irregulars — must memorize!', color: 'amber', phrases: [
+        { jp:'ひとり ≠ いちにん', rom:'hitori (correct) vs ichinin (wrong)', en:'1 person = ひとり ONLY — いちにん is not used for people', note:'Completely different word from the number いち' },
+        { jp:'ふたり ≠ ににん', rom:'futari (correct) vs ninin (wrong)', en:'2 people = ふたり ONLY — ににん is not used for people', note:'You will use ふたり constantly — lock it in!' },
+        { jp:'さんにん〜 → regular！', rom:'san-nin onwards → regular', en:'3 people and above follow the normal にん pattern', note:'Only 1 and 2 are irregular — everything else is number + にん' },
+        { jp:'よにん ≠ しにん', rom:'yo-nin (correct) vs shinin (wrong)', en:'4 people = よにん — NEVER しにん (しにん = death person in Japanese!)', note:'Always use よ for 4 people' },
+      ]},
+      { title: 'Asking the price', color: 'amber', phrases: [
+        { jp:'すみません。いくらですか？', rom:'Sumimasen. Ikura desuka?', en:'Excuse me, how much is it?', role:'you' },
+        { jp:'〇〇えんです。', rom:'〇〇 en desu.', en:"It's 〇〇 yen.", note:'Listen for the number!', role:'staff' },
+      ]},
+    ]
+  },
+
+]; // end units
+
+// ── Voice setup ────────────────────────────────────────────────────────────
+let jpVoice = null, enVoice = null, currentSpeed = 0.85, isPlayingAll = false;
+
+function loadVoices() {
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return;
+  const jpSel = document.getElementById('jpVoice');
+  const enSel = document.getElementById('enVoice');
+  jpSel.innerHTML = ''; enSel.innerHTML = '';
+  const jpVoices = voices.filter(v => v.lang.startsWith('ja'));
+  const enVoices = voices.filter(v => v.lang.startsWith('en'));
+  jpVoices.forEach((v, i) => { const o = document.createElement('option'); o.value=i; o.textContent=v.name; jpSel.appendChild(o); });
+  enVoices.forEach((v, i) => { const o = document.createElement('option'); o.value=i; o.textContent=v.name; enSel.appendChild(o); });
+  jpVoice = jpVoices[0] || null;
+  enVoice = enVoices[0] || null;
+  jpSel.onchange = () => { jpVoice = jpVoices[jpSel.value]; };
+  document.getElementById('voiceStatus').textContent = jpVoice
+    ? '✓ Japanese voice ready'
+    : '⚠ No Japanese voice — install Japanese in device language settings';
+}
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function speak(text, onEnd) {
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.voice = jpVoice; utt.lang = 'ja-JP'; utt.rate = currentSpeed; utt.pitch = 1.0;
+  utt.onend = onEnd || null;
+  window.speechSynthesis.speak(utt);
+}
+
+function speakPhrase(jp, en, btnEl) {
+  stopAll();
+  document.getElementById('npJp').textContent = jp;
+  document.getElementById('npEn').textContent = en;
+  document.getElementById('nowPlaying').classList.add('visible');
+  if (btnEl) { btnEl.textContent = '⏸'; btnEl.classList.add('playing'); }
+  speak(jp, () => {
+    if (btnEl) { btnEl.textContent = '🔊'; btnEl.classList.remove('playing'); }
+    document.getElementById('nowPlaying').classList.remove('visible');
+  });
+}
+
+function stopAll() {
+  window.speechSynthesis.cancel(); isPlayingAll = false;
+  document.getElementById('nowPlaying').classList.remove('visible');
+  document.querySelectorAll('.play-btn').forEach(b => { b.textContent='🔊'; b.classList.remove('playing'); });
+  document.querySelectorAll('.play-all-btn').forEach(b => { b.textContent='▶ Play All'; b.classList.remove('stop'); b.onclick=()=>playAll(b.dataset.unit); });
+  document.querySelectorAll('.phrase-card').forEach(c => c.classList.remove('playing'));
+  const p = document.getElementById('progressText'); if (p) p.textContent='';
+}
+
+function playAll(unitId) {
+  stopAll();
+  const unit = units.find(u => u.id===unitId); if (!unit) return;
+  const allPhrases = unit.sections.flatMap(s => s.phrases);
+  isPlayingAll = true;
+  const btn = document.getElementById('play-all-'+unitId);
+  if (btn) { btn.textContent='■ Stop'; btn.classList.add('stop'); btn.onclick=stopAll; }
+  let i = 0;
+  function playNext() {
+    if (!isPlayingAll || i>=allPhrases.length) { stopAll(); return; }
+    const p = allPhrases[i];
+    const prog = document.getElementById('progressText');
+    if (prog) prog.textContent = (i+1)+' / '+allPhrases.length;
+    document.getElementById('npJp').textContent = p.jp;
+    document.getElementById('npEn').textContent = p.en;
+    document.getElementById('nowPlaying').classList.add('visible');
+    speak(p.jp, () => { if (!isPlayingAll) return; i++; setTimeout(playNext, 900); });
+  }
+  playNext();
+}
+
+function setSpeed(rate) {
+  currentSpeed = rate;
+  document.querySelectorAll('.speed-btn').forEach(b => {
+    b.classList.toggle('active',
+      (rate===0.65 && b.textContent==='Slow') ||
+      (rate===0.85 && b.textContent==='Normal') ||
+      (rate===1.0  && b.textContent==='Fast'));
+  });
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function renderTabs() {
+  const el = document.getElementById('tabs');
+  units.forEach((u,i) => {
+    const t = document.createElement('div');
+    t.className = 'tab'+(i===0?' active':'');
+    t.textContent = u.tab; t.onclick = ()=>switchTab(u.id);
+    el.appendChild(t);
+  });
+}
+
+function switchTab(unitId) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', units[i].id===unitId));
+  document.querySelectorAll('.unit').forEach(u => u.classList.toggle('active', u.id==='unit-'+unitId));
+  stopAll();
+}
+
+function esc(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+function renderUnits() {
+  const content = document.getElementById('content');
+  units.forEach(unit => {
+    const div = document.createElement('div');
+    div.className = 'unit'+(unit.id===units[0].id?' active':'');
+    div.id = 'unit-'+unit.id;
+
+    let html = `<div class="unit-title">${unit.title}</div>
+      <div class="unit-sub">${unit.sub}</div>
+      <div class="play-all-bar">
+        <button class="play-all-btn" id="play-all-${unit.id}" data-unit="${unit.id}" onclick="playAll('${unit.id}')">▶ Play All</button>
+        <span class="speed-label">Speed:</span>
+        <button class="speed-btn" onclick="setSpeed(0.65)">Slow</button>
+        <button class="speed-btn active" onclick="setSpeed(0.85)">Normal</button>
+        <button class="speed-btn" onclick="setSpeed(1.0)">Fast</button>
+        <span class="progress-text" id="progressText"></span>
+      </div>`;
+
+    unit.sections.forEach(sec => {
+      const c = sec.color || '';
+      html += `<div class="section-divider ${c}">${sec.title}</div>`;
+      sec.phrases.forEach(p => {
+        const rc = p.role==='staff'?'staff':p.role==='you'?'you':'';
+        const bc = p.role==='you'?'you-btn':'';
+        const lbl = p.role==='staff'?`<div class="card-label staff-lbl">🎌 Staff</div>`
+                   :p.role==='you'  ?`<div class="card-label you-lbl">👤 You</div>`:'';
+        html += `<div class="phrase-card ${rc}">
+          ${lbl}
+          <button class="play-btn ${bc}" onclick="speakPhrase('${esc(p.jp)}','${esc(p.en)}',this)">🔊</button>
+          <div class="jp-text">${p.jp}</div>
+          <div class="romaji">${p.rom}</div>
+          <div class="english">${p.en}</div>
+          ${p.note?`<div class="note">★ ${p.note}</div>`:''}
+        </div>`;
+      });
+    });
+
+    div.innerHTML = html;
+    content.appendChild(div);
+  });
+}
+
+renderTabs();
+renderUnits();
+renderKana();
+
+// ── Kana renderer ──────────────────────────────────────────────────────────
+function renderKana() {
+  const div = document.getElementById('unit-kana');
+  if (!div) return;
+
+  const hira = [
+    { row:'あ行', cells:[{c:'あ',r:'a'},{c:'い',r:'i'},{c:'う',r:'u'},{c:'え',r:'e'},{c:'お',r:'o'}]},
+    { row:'か行', cells:[{c:'か',r:'ka'},{c:'き',r:'ki'},{c:'く',r:'ku'},{c:'け',r:'ke'},{c:'こ',r:'ko'}]},
+    { row:'さ行', cells:[{c:'さ',r:'sa'},{c:'し',r:'shi'},{c:'す',r:'su'},{c:'せ',r:'se'},{c:'そ',r:'so'}]},
+    { row:'た行', cells:[{c:'た',r:'ta'},{c:'ち',r:'chi'},{c:'つ',r:'tsu'},{c:'て',r:'te'},{c:'と',r:'to'}]},
+    { row:'な行', cells:[{c:'な',r:'na'},{c:'に',r:'ni'},{c:'ぬ',r:'nu'},{c:'ね',r:'ne'},{c:'の',r:'no'}]},
+    { row:'は行', cells:[{c:'は',r:'ha'},{c:'ひ',r:'hi'},{c:'ふ',r:'fu'},{c:'へ',r:'he'},{c:'ほ',r:'ho'}]},
+    { row:'ま行', cells:[{c:'ま',r:'ma'},{c:'み',r:'mi'},{c:'む',r:'mu'},{c:'め',r:'me'},{c:'も',r:'mo'}]},
+    { row:'や行', cells:[{c:'や',r:'ya'},{c:'',r:''},{c:'ゆ',r:'yu'},{c:'',r:''},{c:'よ',r:'yo'}]},
+    { row:'ら行', cells:[{c:'ら',r:'ra'},{c:'り',r:'ri'},{c:'る',r:'ru'},{c:'れ',r:'re'},{c:'ろ',r:'ro'}]},
+    { row:'わ行', cells:[{c:'わ',r:'wa'},{c:'',r:''},{c:'',r:''},{c:'',r:''},{c:'を',r:'wo'}]},
+    { row:'ん',   cells:[{c:'ん',r:'n'},{c:'',r:''},{c:'',r:''},{c:'',r:''},{c:'',r:''}]},
+  ];
+
+  const kata = [
+    { row:'ア行', cells:[{c:'ア',r:'a'},{c:'イ',r:'i'},{c:'ウ',r:'u'},{c:'エ',r:'e'},{c:'オ',r:'o'}]},
+    { row:'カ行', cells:[{c:'カ',r:'ka'},{c:'キ',r:'ki'},{c:'ク',r:'ku'},{c:'ケ',r:'ke'},{c:'コ',r:'ko'}]},
+    { row:'サ行', cells:[{c:'サ',r:'sa'},{c:'シ',r:'shi'},{c:'ス',r:'su'},{c:'セ',r:'se'},{c:'ソ',r:'so'}]},
+    { row:'タ行', cells:[{c:'タ',r:'ta'},{c:'チ',r:'chi'},{c:'ツ',r:'tsu'},{c:'テ',r:'te'},{c:'ト',r:'to'}]},
+    { row:'ナ行', cells:[{c:'ナ',r:'na'},{c:'ニ',r:'ni'},{c:'ヌ',r:'nu'},{c:'ネ',r:'ne'},{c:'ノ',r:'no'}]},
+    { row:'ハ行', cells:[{c:'ハ',r:'ha'},{c:'ヒ',r:'hi'},{c:'フ',r:'fu'},{c:'ヘ',r:'he'},{c:'ホ',r:'ho'}]},
+    { row:'マ行', cells:[{c:'マ',r:'ma'},{c:'ミ',r:'mi'},{c:'ム',r:'mu'},{c:'メ',r:'me'},{c:'モ',r:'mo'}]},
+    { row:'ヤ行', cells:[{c:'ヤ',r:'ya'},{c:'',r:''},{c:'ユ',r:'yu'},{c:'',r:''},{c:'ヨ',r:'yo'}]},
+    { row:'ラ行', cells:[{c:'ラ',r:'ra'},{c:'リ',r:'ri'},{c:'ル',r:'ru'},{c:'レ',r:'re'},{c:'ロ',r:'ro'}]},
+    { row:'ワ行', cells:[{c:'ワ',r:'wa'},{c:'',r:''},{c:'',r:''},{c:'',r:''},{c:'ヲ',r:'wo'}]},
+    { row:'ン',   cells:[{c:'ン',r:'n'},{c:'',r:''},{c:'',r:''},{c:'',r:''},{c:'',r:''}]},
+  ];
+
+  // voiced (dakuten) & combo additions
+  const hira_extra = [
+    { row:'が行', cells:[{c:'が',r:'ga'},{c:'ぎ',r:'gi'},{c:'ぐ',r:'gu'},{c:'げ',r:'ge'},{c:'ご',r:'go'}]},
+    { row:'ざ行', cells:[{c:'ざ',r:'za'},{c:'じ',r:'ji'},{c:'ず',r:'zu'},{c:'ぜ',r:'ze'},{c:'ぞ',r:'zo'}]},
+    { row:'だ行', cells:[{c:'だ',r:'da'},{c:'ぢ',r:'ji'},{c:'づ',r:'zu'},{c:'で',r:'de'},{c:'ど',r:'do'}]},
+    { row:'ば行', cells:[{c:'ば',r:'ba'},{c:'び',r:'bi'},{c:'ぶ',r:'bu'},{c:'べ',r:'be'},{c:'ぼ',r:'bo'}]},
+    { row:'ぱ行', cells:[{c:'ぱ',r:'pa'},{c:'ぴ',r:'pi'},{c:'ぷ',r:'pu'},{c:'ぺ',r:'pe'},{c:'ぽ',r:'po'}]},
+  ];
+
+  const kata_extra = [
+    { row:'ガ行', cells:[{c:'ガ',r:'ga'},{c:'ギ',r:'gi'},{c:'グ',r:'gu'},{c:'ゲ',r:'ge'},{c:'ゴ',r:'go'}]},
+    { row:'ザ行', cells:[{c:'ザ',r:'za'},{c:'ジ',r:'ji'},{c:'ズ',r:'zu'},{c:'ゼ',r:'ze'},{c:'ゾ',r:'zo'}]},
+    { row:'ダ行', cells:[{c:'ダ',r:'da'},{c:'ヂ',r:'ji'},{c:'ヅ',r:'zu'},{c:'デ',r:'de'},{c:'ド',r:'do'}]},
+    { row:'バ行', cells:[{c:'バ',r:'ba'},{c:'ビ',r:'bi'},{c:'ブ',r:'bu'},{c:'ベ',r:'be'},{c:'ボ',r:'bo'}]},
+    { row:'パ行', cells:[{c:'パ',r:'pa'},{c:'ピ',r:'pi'},{c:'プ',r:'pu'},{c:'ペ',r:'pe'},{c:'ポ',r:'po'}]},
+  ];
+
+  function makeGrid(rows, idPrefix) {
+    let html = `<div class="kana-grid">
+      <div class="kana-header"></div>
+      <div class="kana-header">a</div>
+      <div class="kana-header">i</div>
+      <div class="kana-header">u</div>
+      <div class="kana-header">e</div>
+      <div class="kana-header">o</div>`;
+    rows.forEach((row, ri) => {
+      html += `<div class="kana-row-label">${row.row}</div>`;
+      row.cells.forEach((cell, ci) => {
+        if (!cell.c) {
+          html += `<div class="kana-cell empty"></div>`;
+        } else {
+          const id = `${idPrefix}-${ri}-${ci}`;
+          html += `<div class="kana-cell" id="${id}" onclick="speakKana('${cell.c}','${cell.r}','${id}')">
+            <span class="kana-char">${cell.c}</span>
+            <span class="kana-rom">${cell.r}</span>
+          </div>`;
+        }
+      });
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function allCells(rows) {
+    return rows.flatMap(r => r.cells.filter(c => c.c));
+  }
+
+  let html = `
+    <div class="unit-title">ひらがな & カタカナ</div>
+    <div class="unit-sub" style="margin-bottom:16px;">Tap any character to hear it pronounced · Play All to hear the full alphabet</div>
+
+    <div class="kana-tip">
+      <b>How to use:</b> Tap any character to hear it spoken in Japanese.
+      Each character = one sound. There are no silent letters.
+      Cover the romaji and test yourself — say the sound before you tap!
+    </div>
+
+    <!-- HIRAGANA -->
+    <div class="kana-section-title">ひらがな — Hiragana</div>
+    <div class="kana-section-sub">Used for native Japanese words and grammar · Learn these first</div>
+    <button class="kana-play-all" id="kana-play-hira" onclick="playKanaAll('hira')">▶ Play All ひらがな</button>
+    <button class="kana-play-all stop" id="kana-stop" onclick="stopAll()" style="display:none">■ Stop</button>
+    ${makeGrid(hira, 'h')}
+
+    <div style="margin:16px 0 8px;">
+      <span style="font-size:12px;font-weight:600;color:#555;">+ Voiced sounds (濁音 dakuten ゛& 半濁音 handakuten ゜)</span>
+    </div>
+    ${makeGrid(hira_extra, 'hx')}
+
+    <hr class="kana-divider">
+
+    <!-- KATAKANA -->
+    <div class="kana-section-title">カタカナ — Katakana</div>
+    <div class="kana-section-sub">Used for foreign/loan words · Same sounds as hiragana, different shapes</div>
+    <button class="kana-play-all kata" id="kana-play-kata" onclick="playKanaAll('kata')">▶ Play All カタカナ</button>
+    ${makeGrid(kata, 'k')}
+
+    <div style="margin:16px 0 8px;">
+      <span style="font-size:12px;font-weight:600;color:#555;">+ Voiced sounds</span>
+    </div>
+    ${makeGrid(kata_extra, 'kx')}
+
+    <hr class="kana-divider">
+
+    <!-- KATAKANA LOAN WORDS -->
+    <div class="kana-section-title">カタカナ words you already know 🎉</div>
+    <div class="kana-section-sub">Tap to hear — these are English words written in Japanese!</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+  `;
+
+  const loanWords = [
+    ['テレビ','terebi','TV'],['コーヒー','kōhī','Coffee'],
+    ['ホテル','hoteru','Hotel'],['レストラン','resutoran','Restaurant'],
+    ['スポーツ','supōtsu','Sports'],['ミュージック','myūjikku','Music'],
+    ['ゲーム','gēmu','Game'],['メニュー','menyū','Menu'],
+    ['アイス','aisu','Ice (cream)'],['ジュース','jūsu','Juice'],
+    ['バス','basu','Bus'],['タクシー','takushī','Taxi'],
+    ['スーパー','sūpā','Supermarket'],['コンビニ','konbini','Convenience store'],
+    ['インターネット','intānetto','Internet'],['スマホ','sumaho','Smartphone'],
+  ];
+
+  loanWords.forEach((w, i) => {
+    const id = `lw-${i}`;
+    html += `<div class="kana-cell" id="${id}" onclick="speakKana('${w[0]}','${w[1]}','${id}')" style="padding:10px 44px 10px 12px;text-align:left;border-radius:12px;">
+      <button class="play-btn" style="top:50%;right:8px;transform:translateY(-50%);width:30px;height:30px;font-size:13px;pointer-events:none;">🔊</button>
+      <span class="kana-char" style="font-size:18px;">${w[0]}</span>
+      <span class="kana-rom">${w[1]}</span>
+      <span style="font-size:11px;color:#666;display:block;">${w[2]}</span>
+    </div>`;
+  });
+
+  html += `</div>`;
+  div.innerHTML = html;
+
+  // store kana data for playAll
+  div._hiraAll = allCells([...hira, ...hira_extra]);
+  div._kataAll = allCells([...kata, ...kata_extra]);
+}
+
+let kanaPlayInterval = null;
+function playKanaAll(which) {
+  stopAll();
+  const div = document.getElementById('unit-kana');
+  const cells = which === 'hira' ? div._hiraAll : div._kataAll;
+  isPlayingAll = true;
+  document.getElementById('kana-stop').style.display = 'inline-block';
+  let i = 0;
+  function next() {
+    if (!isPlayingAll || i >= cells.length) {
+      document.getElementById('kana-stop').style.display = 'none';
+      stopAll(); return;
+    }
+    const cell = cells[i];
+    document.getElementById('npJp').textContent = cell.c;
+    document.getElementById('npEn').textContent = cell.r;
+    document.getElementById('nowPlaying').classList.add('visible');
+    speak(cell.c, () => { if (!isPlayingAll) return; i++; setTimeout(next, 600); });
+  }
+  next();
+}
+
+function speakKana(char, rom, cellId) {
+  stopAll();
+  document.querySelectorAll('.kana-cell').forEach(c => c.classList.remove('playing'));
+  const el = document.getElementById(cellId);
+  if (el) el.classList.add('playing');
+  document.getElementById('npJp').textContent = char;
+  document.getElementById('npEn').textContent = rom;
+  document.getElementById('nowPlaying').classList.add('visible');
+  speak(char, () => {
+    if (el) el.classList.remove('playing');
+    document.getElementById('nowPlaying').classList.remove('visible');
+  });
+}
+
+// ── iOS Audio Unlock ───────────────────────────────────────────────────────
+// iOS requires a user gesture before speech synthesis will work.
+// We prime it silently on first tap anywhere.
+let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  const utt = new SpeechSynthesisUtterance('');
+  utt.volume = 0;
+  window.speechSynthesis.speak(utt);
+}
+document.addEventListener('touchstart', unlockAudio, { once: true });
+document.addEventListener('click', unlockAudio, { once: true });
+
+// ── iOS Install Banner ─────────────────────────────────────────────────────
+function dismissBanner() {
+  document.getElementById('installBanner').classList.remove('show');
+  localStorage.setItem('installDismissed', '1');
+}
+
+function checkInstallBanner() {
+  // Only show on iOS Safari when NOT already installed as PWA
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  const wasDismissed = localStorage.getItem('installDismissed');
+  if (isIOS && !isStandalone && !wasDismissed) {
+    setTimeout(() => {
+      document.getElementById('installBanner').classList.add('show');
+    }, 1500);
+  }
+}
+checkInstallBanner();
+
+// ── Service Worker Registration ────────────────────────────────────────────
+// Caches the guide for offline use after first load
+if ('serviceWorker' in navigator) {
+  // Inline service worker as a blob so it works from a single HTML file
+  const swCode = `
+    const CACHE = 'jp-guide-v1';
+    self.addEventListener('install', e => {
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e => {
+      self.clients.claim();
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(
+        caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return resp;
+        }).catch(() => caches.match(e.request)))
+      );
+    });
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+</script>
+</body>
+</html>
